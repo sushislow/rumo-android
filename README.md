@@ -1,6 +1,14 @@
-# Rumo — Diário de Progresso | Versão beta 1.1.0
+# Rumo — Diário de Progresso | Versão beta 1.2.0
 
 Aplicativo Android offline e local para acompanhar hábitos ligados ao uso problemático de pornografia. Gratuito durante o período de testes; **não é ferramenta terapêutica validada**.
+
+## Novidades da versão 1.2
+
+- **Lembretes locais opcionais**, de zero a três vezes por dia. Ativados apenas por decisão do usuário e permissão do Android; horários aproximados pelo WorkManager, que continua mesmo após reinício.
+- **Quatro temas**: Oceano, Violeta, Floresta e Areia clara. A escolha fica salva neste aparelho.
+- **Mensagens após check-in**: reconhecimento de dias sem consumo; apoio e sugestões concretas para dias com consumo; mensagens neutras para registros parciais. Não são enviadas como notificações.
+- **Privacidade das notificações**: títulos e textos neutros, conteúdo oculto na tela de bloqueio (`VISIBILITY_SECRET`). Não lê as observações do diário para gerar lembretes.
+- **Calendário com sinais de status**, além das cores.
 
 ## Nesta versão
 
@@ -25,7 +33,7 @@ Aplicativo Android offline e local para acompanhar hábitos ligados ao uso probl
 
 1. **Antes de qualquer atualização do APK:** abrir Rumo → Dados → **Backup protegido por senha** se já tiver v1.1, ou `Exportar cópia JSON` se tiver v1.0. Confirme que o arquivo foi salvo fora do app; não compartilhe com outras pessoas.
 2. Extraia os arquivos deste ZIP na raiz do **mesmo repositório Rumo**, substituindo somente os arquivos do Rumo. Não envie o ZIP fechado como único arquivo. Preserve `.git` e `.github`.
-3. Codespaces: `unzip -o Rumo_Beta_Android_v1_1.zip && git add . && git commit -m "Atualizar Rumo beta 1.1" && git push`.
+3. Codespaces: `unzip -o Rumo_Beta_Android_v1_2.zip && git add . && git commit -m "Atualizar Rumo beta 1.2" && git push`.
 4. Em Actions → **Gerar APK do Rumo**, baixe o artifact Rumo-APK, extraia `app-debug.apk`.
 5. Se a versão debug tiver assinatura diferente, ela não instalará sobre a antiga. **Não desinstale sem backup.** Para atualizações duráveis, configure assinatura fixa em `GUIA_ASSINATURA_E_PUBLICACAO.md`.
 6. Não commite arquivos de backup (mesmo criptografados) nem keystores no GitHub.
@@ -40,3 +48,5 @@ Aplicativo Android offline e local para acompanhar hábitos ligados ao uso probl
 ## Checklist do que testar
 
 Veja `PLANO_TESTES_E_QUESTIONARIO.md`. Teste importação v1, atualização sem perda de dados, datas, gráficos, backup protegido e restore antes de convidar voluntários.
+
+Veja `GUIA_ATUALIZACAO_1_2.md` para procedimentos e testes de notificações, permissões e temas.

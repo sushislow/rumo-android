@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b1521">
   <meta name="description" content="Diário pessoal e privado para acompanhar hábitos, gatilhos e seu progresso, um dia de cada vez.">
-  <meta name="color-scheme" content="dark">
+  <meta name="color-scheme" content="dark light">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; worker-src 'self'; font-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
@@ -168,6 +168,66 @@
     .tool-steps {padding-left:20px;line-height:1.65;color:#dae7ee;font-size:.9rem;}
     .safe-space {color:#9de6cb;font-size:.82rem;}
     @media(max-width:430px){ .nav-btn {font-size:.62rem;} .nav-inner {gap:3px;} }
+
+    /* v1.2: temas e mensagens -- paletas controladas, status continua semanticamente consistente. */
+    :root[data-theme="violeta"] {--bg:#171326;--panel:#211c33;--panel-alt:#302846;--border:#514363;--muted:#c0b5d4;--text:#faf5ff;--mint:#d8b4fe;--mint-dark:#3e2856;--coral:#ffc0a9;--coral-dark:#54333e;--lavender:#bee4ff;--lavender-dark:#293b57;--cream:#f7e9c9;}
+    :root[data-theme="floresta"] {--bg:#0b201c;--panel:#133029;--panel-alt:#1d4137;--border:#366052;--muted:#b2d0c5;--text:#f1fff8;--mint:#9af0a9;--mint-dark:#1e523a;--coral:#ffb1a6;--coral-dark:#543337;--lavender:#e0c5ff;--lavender-dark:#473456;--cream:#fff3cd;}
+    :root[data-theme="areia"] {--bg:#f8f5ec;--panel:#fffdfa;--panel-alt:#eae3d5;--border:#b5ab97;--muted:#5c554a;--text:#252920;--mint:#14694c;--mint-dark:#d1e9da;--coral:#823c3c;--coral-dark:#f6dddc;--lavender:#523996;--lavender-dark:#e8e1f6;--cream:#4c3a18;--shadow:0 10px 25px #352a2119;}
+    /* Usa as variáveis em superfícies que antes tinham tons fixos. */
+    .panel,.stat {color:var(--text)}
+    .day {background:var(--panel-alt);border-color:var(--border)}
+    .day.done {background:var(--mint-dark);border-color:var(--mint)}
+    .day.done .number,.day.done .dot {color:var(--mint)}
+    .day.slip {background:var(--coral-dark);border-color:var(--coral)}
+    .day.slip .number {color:var(--coral)}
+    .day.partial {background:var(--lavender-dark);border-color:var(--lavender)}
+    .day.selected {box-shadow:inset 0 0 0 2px var(--cream)}
+    .option,.chip,textarea,.activity,.notice {background:var(--panel-alt);border-color:var(--border);color:var(--text)}
+    .option:has(input:checked),.chip:has(input:checked) {background:var(--mint-dark);border-color:var(--mint);color:var(--mint)}
+    .option.slip:has(input:checked) {background:var(--coral-dark);border-color:var(--coral);color:var(--coral)}
+    .stat-detail,.soft-note,.field-sub,.legend,.checkline,.activity p,.notice,.privacy-note,.activity h3,.timeline-label,.bar-label,.bar-value {color:var(--muted)}
+    .swatch {background:var(--panel-alt);border-color:var(--border)}
+    .bar-track {background:var(--panel-alt)}
+    .bar-fill {background:var(--mint)}
+    .icon-btn,.btn-secondary {background:var(--panel-alt);border-color:var(--border);color:var(--text)}
+    .nav {background:var(--panel);border-color:var(--border)}
+    .nav-btn {color:var(--muted)}
+    .nav-btn.active {color:var(--mint);background:var(--mint-dark)}
+    .btn-primary {background:var(--mint);color:#092c23}
+    :root[data-theme="areia"] .btn-primary {color:#fff}
+    .btn-ghost {color:var(--mint);border-color:var(--mint)}
+    .btn-danger {color:var(--coral);background:var(--coral-dark);border-color:var(--coral)}
+    :root[data-theme="areia"] .hero {background:linear-gradient(120deg,#d3e9dc,#efe6ce);border-color:#aec5b1;color:#202c25}
+    :root[data-theme="areia"] .hero p:last-of-type {color:#3d5349}
+    :root[data-theme="areia"] .privacy {background:#d9eddd;border-color:#b5d9c2;color:#14694c}
+    :root[data-theme="areia"] .privacy:before {background:#14694c}
+    :root[data-theme="areia"] .eyebrow {color:#14694c}
+    :root[data-theme="areia"] .option,.chip,:root[data-theme="areia"] textarea {color:var(--text)}
+    :root[data-theme="areia"] .option:has(input:checked),:root[data-theme="areia"] .chip:has(input:checked) {color:#124e38}
+    :root[data-theme="areia"] .option.slip:has(input:checked) {color:#823c3c}
+    :root[data-theme="areia"] .day.done .number {color:#0a5135}
+    :root[data-theme="areia"] .day.slip .number {color:#823c3c}
+    :root[data-theme="areia"] .legend,.soft-note,.field-sub,.checkline {color:#5c554a}
+    .day .dot {width:auto;height:14px;min-width:12px;background:transparent!important;font-size:.71rem;font-weight:900;line-height:1}
+    .day.done .dot {color:var(--mint)}
+    .day.slip .dot {color:var(--coral)}
+    .day.partial .dot {color:var(--lavender)}
+    .theme-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}
+    .theme-choice {min-height:78px;border:2px solid var(--border);border-radius:13px;background:var(--panel-alt);color:var(--text);padding:12px;text-align:left;font-weight:730;display:flex;align-items:center;gap:11px}
+    .theme-choice[aria-pressed="true"] {border-color:var(--mint);outline:2px solid var(--mint);outline-offset:1px}
+    .theme-preview {width:28px;height:35px;border-radius:8px;flex:none;border:2px solid #8a9296;}
+    .pref-field {display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+    .pref-field:last-child {border-bottom:0}
+    .pref-field label {font-weight:650;font-size:.88rem}
+    .pref-field select,.pref-field input[type=time] {background:var(--panel-alt);border:1px solid var(--border);border-radius:9px;padding:10px;color:var(--text);font:inherit;max-width:160px;min-width:104px}
+    .pref-field select:focus-visible,.pref-field input[type=time]:focus-visible {outline:3px solid var(--lavender)}
+    .feedback {border:1px solid var(--border);background:var(--panel-alt);padding:16px;border-radius:14px;margin:18px 0;line-height:1.6}
+    .feedback strong {display:block;font-size:1rem;margin-bottom:5px}
+    .feedback.done {border-left:4px solid var(--mint)}
+    .feedback.slip {border-left:4px solid var(--coral)}
+    .feedback.partial {border-left:4px solid var(--lavender)}
+    .feedback p {margin:0;color:var(--text);font-size:.9rem}
+    @media (prefers-reduced-motion:reduce) {*,*:before,*:after {scroll-behavior:auto!important;transition:none!important;animation:none!important}}
   </style>
 </head>
 <body>
@@ -205,6 +265,64 @@
         ['kindness', 'Registrei meus gatilhos sem me punir']
       ];
       const triggers = ['Sozinho com celular','Banheiro','Tédio','Ansiedade','Redes sociais','Cansaço','Outro'];
+
+      const PREFS_KEY='rumo_preferencias_v1';
+      const themes=['oceano','violeta','floresta','areia'];
+      const defaults={theme:'oceano',reminderCount:0,reminderTimes:['08:30','14:00','20:30']};
+      function safeTime(value,fallback){return typeof value==='string'&&/^([01]\d|2[0-3]):[0-5]\d$/.test(value)?value:fallback;}
+      function loadPrefs(){
+        try{const p=JSON.parse(localStorage.getItem(PREFS_KEY)||'{}');return {
+          theme:themes.includes(p.theme)?p.theme:defaults.theme,
+          reminderCount:Number.isInteger(p.reminderCount)&&p.reminderCount>=0&&p.reminderCount<=3?p.reminderCount:0,
+          reminderTimes:defaults.reminderTimes.map((d,i)=>safeTime(p.reminderTimes?.[i],d))
+        };}catch(e){return {...defaults,reminderTimes:[...defaults.reminderTimes]};}
+      }
+      let prefs=loadPrefs();
+      function applyTheme(){document.documentElement.setAttribute('data-theme',prefs.theme);document.querySelector('meta[name="theme-color"]')?.setAttribute('content',prefs.theme==='areia'?'#f8f5ec':'#0b1421');}
+      function savePrefs(){localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));}
+      applyTheme();
+      const congratulations=[
+        'Você fez uma escolha alinhada ao seu objetivo hoje. Reconheça o esforço e mantenha sua rotina.',
+        'Hoje houve um avanço. Não precisa ser perfeito amanhã: apenas continue praticando suas estratégias.',
+        'Seu registro mostra uma decisão consciente. Observe o que ajudou e repita o que funcionou.',
+        'Você cuidou de um objetivo importante. Celebre o passo e siga um dia de cada vez.',
+        'Você conseguiu praticar uma escolha importante. O próximo passo é cuidar da rotina que a tornou possível.',
+        'A consistência é construída aos poucos. Identifique uma pequena atitude que quer repetir amanhã.',
+        'Reconheça o que deu certo, sem criar a obrigação de ter um dia perfeito amanhã.',
+        'Hoje você registrou um dia alinhado ao seu plano. Mantenha as estratégias que funcionaram.',
+        'Um dia registrado com sinceridade é informação para continuar. Parabéns pelo compromisso com seu plano.',
+        'Hoje você teve espaço para escolher sua resposta. Continue praticando essa habilidade.',
+        'Você está construindo um hábito novo com ações reais. Valorize a atitude, não apenas o número no calendário.',
+        'Seu esforço merece ser reconhecido. Cuide também do descanso e das relações fora da tela.'
+      ];
+      const lapseSupport=[
+        'Hoje houve consumo. Interromper o ciclo e entender o contexto ainda é possível. Qual gatilho apareceu primeiro?',
+        'Um dia difícil não apaga os anteriores. Anote o que antecedeu o consumo e escolha uma proteção para amanhã.',
+        'Evite transformar este registro em autocrítica. Retome o plano com uma mudança prática e alcançável.',
+        'O registro foi sincero. O próximo passo é aprender com o ocorrido, não se punir por ele.',
+        'Você pode retomar seu plano agora. Qual ambiente ou aplicativo precisa de uma barreira adicional?',
+        'Um deslize é informação, não uma identidade. Perceba o contexto e escolha uma resposta diferente para a próxima vez.',
+        'O importante agora é interromper o comportamento e cuidar de você. Não existe benefício em se castigar.',
+        'Se o impulso apareceu num momento de cansaço, pense em uma rotina de descanso mais protegida.',
+        'O que aconteceu pode ser estudado sem julgamento. Que sinal inicial você quer reconhecer da próxima vez?',
+        'Não precisa compensar o que aconteceu. Um passo viável para hoje vale mais do que prometer mudanças impossíveis.',
+        'Retome as estratégias que já ajudaram antes. Ajustar uma barreira é mais útil do que buscar perfeição.',
+        'Seu objetivo continua válido. Você pode aprender com o dia e escolher uma ação pequena para recomeçar.'
+      ];
+      const partialSupport=['Registrar o que aconteceu já ajuda a identificar padrões. Você pode completar o resto quando quiser.'];
+      function messageFor(date,status){
+        const collection=status==='done'?congratulations:status==='slip'?lapseSupport:partialSupport;
+        const idx=Array.from(date).reduce((acc,ch)=>acc+ch.charCodeAt(0),0)%collection.length;
+        return {title:status==='done'?'Um passo reconhecido':status==='slip'?'Seu caminho continua':'Registro feito',body:collection[idx]};
+      }
+      function feedbackHTML(date,status){const m=messageFor(date,status);return `<div class="feedback ${status||'partial'}" role="status"><strong>${escapeHTML(m.title)}</strong><p>${escapeHTML(m.body)}</p></div>`;}
+      // Acionado pelo Android após a autorização. Com permissão negada os lembretes permanecem desligados.
+      window.RumoNativeNotificationsResult=(enabled,message)=>{
+        if(!enabled){prefs.reminderCount=0;savePrefs();}
+        if(app.view==='settings')render();
+        toast(message|| (enabled?'Lembretes configurados.':'Lembretes desligados.'));
+      };
+
       const today = () => { const d = new Date(); return fmtDate(d); };
       const fmtDate = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
       const parseDate = iso => { const [y,m,d] = iso.split('-').map(Number); return new Date(y,m-1,d,12); };
@@ -264,7 +382,7 @@
           const iso=fmtDate(date),outside=date.getMonth()!==app.month.getMonth(),future=iso>today();
           const entry=app.entries[iso];const cls=entry?.status||(!outside&&entry?'partial':'');
           const statusLabel=cls==='done'?'sem consumo':cls==='slip'?'houve consumo':cls==='partial'?'registro parcial':'sem registro';
-          days+=`<button type="button" class="day ${outside?'outside':''} ${cls} ${iso===today()?'today':''} ${iso===app.selected?'selected':''}" data-date="${iso}" aria-label="${displayDate(iso)}: ${statusLabel}" ${future?'disabled title="Data futura"':''}><span class="number">${date.getDate()}</span><span class="dot" aria-hidden="true"></span></button>`;
+          days+=`<button type="button" class="day ${outside?'outside':''} ${cls} ${iso===today()?'today':''} ${iso===app.selected?'selected':''}" data-date="${iso}" aria-label="${displayDate(iso)}: ${statusLabel}" ${future?'disabled title="Data futura"':''}><span class="number">${date.getDate()}</span><span class="dot" aria-hidden="true">${cls==='done'?'✓':cls==='slip'?'↗':cls==='partial'?'·':''}</span></button>`;
         }
         const futureMonth = fmtDate(new Date(app.month.getFullYear(),app.month.getMonth()+1,1)).slice(0,7)>today().slice(0,7);
         return `<section class="hero"><p class="eyebrow">Um dia de cada vez</p><h1>Seu caminho é feito de pequenos passos.</h1><p>Registre como foi seu dia, reconheça seus gatilhos e acompanhe sua evolução sem julgamentos.</p><div class="hero-actions"><button type="button" class="btn btn-primary" data-action="today-checkin">+ Fazer check-in de hoje</button><button type="button" class="btn btn-secondary" data-action="open-tools">Preciso de ajuda agora</button></div></section>
@@ -288,7 +406,7 @@
           <div class="field"><div class="field-title">Hábitos que consegui praticar</div><p class="field-sub">Deixe desmarcado o que não fez, não tentou ou não precisou fazer.</p>${habits.map(([key,label])=>`<label class="checkline"><input type="checkbox" name="habit-${key}" ${e.habits[key]?'checked':''}>${escapeHTML(label)}</label>`).join('')}</div>
           <div class="field"><div class="field-title">Como me senti? (opcional)</div><p class="field-sub">Pode anotar emoções, contexto, pensamentos ou algo que aprendeu.</p><textarea name="note" maxlength="4000" placeholder="Hoje percebi que...">${escapeHTML(e.note)}</textarea></div>
           <div class="actions"><button type="submit" class="btn btn-primary">Salvar check-in</button><button type="button" class="btn btn-secondary" data-action="copy-checkin">Copiar para o Atlas</button></div><p class="save-msg" id="save-indicator">${e.updatedAt?'Último registro salvo neste aparelho.':''}</p>
-          </form></section><div class="hint">Ao copiar, você pode colar o resumo na nossa conversa do ChatGPT para receber uma análise. O app não envia seus dados automaticamente.</div>`;
+          </form>${e.updatedAt?feedbackHTML(app.selected,e.status):'<div id="feedback-holder"></div>'}</section><div class="hint">Ao copiar, você pode colar o resumo na nossa conversa do ChatGPT para receber uma análise. O app não envia seus dados automaticamente.</div>`;
       }
       let timerRemaining=120,timerHandle=null;
       const stopTimer=()=>{if(timerHandle!==null){clearInterval(timerHandle);timerHandle=null;}};
@@ -326,9 +444,17 @@
       function settingsPage(){
         const total=Object.keys(app.entries).length;
         return `<h1 class="section-title">Seus dados e sua privacidade</h1><p class="section-sub">Você controla as informações registradas aqui.</p>
+          <section class="panel"><h2>Seu tema</h2><p class="description">Escolha uma combinação agradável. O significado dos registros continua igual em todos os temas.</p>
+          <div class="theme-grid">${[['oceano','Oceano','#0b1421','#78e1bb'],['violeta','Violeta','#171326','#d8b4fe'],['floresta','Floresta','#0b201c','#9af0a9'],['areia','Areia clara','#f8f5ec','#14694c']].map(([key,label,bg,accent])=>`<button class="theme-choice" type="button" data-action="choose-theme" data-theme="${key}" aria-pressed="${prefs.theme===key}"><span class="theme-preview" style="background:linear-gradient(140deg,${bg} 60%,${accent} 60%)"></span>${label}</button>`).join('')}</div>
+          <p class="soft-note">Um tema não altera os seus registros.</p></section>
+          <section class="panel"><h2>Lembretes discretos</h2><p class="description">Desativados por padrão. Escolha até três horários em que uma pausa seria útil. Mensagens neutras, sem detalhes íntimos; envio aproximado conforme o Android.</p>
+          <div class="pref-field"><label for="reminder-count">Lembretes por dia</label><select id="reminder-count"><option value="0" ${prefs.reminderCount===0?'selected':''}>Desligado</option><option value="1" ${prefs.reminderCount===1?'selected':''}>1 por dia</option><option value="2" ${prefs.reminderCount===2?'selected':''}>2 por dia</option><option value="3" ${prefs.reminderCount===3?'selected':''}>3 por dia</option></select></div>
+          ${['Primeiro horário','Segundo horário','Terceiro horário'].map((label,i)=>`<div class="pref-field"><label for="reminder-${i}">${label}</label><input id="reminder-${i}" type="time" value="${prefs.reminderTimes[i]}" ${i>=prefs.reminderCount?'disabled':''}></div>`).join('')}
+          <div class="actions" style="margin-top:16px"><button class="btn btn-primary" data-action="save-reminders">Salvar lembretes</button></div>
+          <p class="soft-note">No APK Android é necessário permitir notificações. No navegador, os horários são apenas preferência visual e não geram notificações em segundo plano. Você pode desativar quando quiser.</p></section>
           <section class="panel"><h2>Armazenamento local</h2><p class="description">Os check-ins ficam neste navegador, neste aparelho. Não criamos conta, não usamos servidor e não enviamos seus dados para ninguém.</p><div class="stat" style="max-width:200px"><div class="stat-label">Registros salvos</div><div class="stat-val">${total}</div></div><p class="soft-note">Importante: limpar os dados do navegador pode apagar seus registros. Use a cópia de segurança para protegê-los.</p></section>
           <section class="panel"><h2>Cópia de segurança</h2><p class="description">Prefira a cópia protegida por senha (AES-GCM). Uma senha esquecida não pode ser recuperada. JSON simples e CSV contêm dados íntimos legíveis — somente exporte se realmente precisar.</p><div class="actions"><button class="btn btn-primary" data-action="export-secure">Backup protegido por senha</button><button class="btn btn-secondary" data-action="import-json">Restaurar backup</button><button class="btn btn-ghost" data-action="export-json">JSON sem proteção</button><button class="btn btn-ghost" data-action="export-csv">CSV sem proteção</button></div><input id="import-input" class="file-input" type="file" accept=".json,application/json" aria-label="Importar JSON"></section>
-          <section class="panel"><h2>Proteção atual</h2><p class="description">Este app é offline, não pede acesso à internet e bloqueia capturas de tela no Android. Porém, os registros locais <strong>ainda não estão criptografados em repouso</strong>. O backup protegido por senha é criptografado, mas a proteção dos dados locais será uma etapa adicional antes de vender/publicar.</p><p class="notice">Evite aparelhos compartilhados ou modificados e não envie backups, mesmo protegidos, ao repositório GitHub. Esta versão é para testes pessoais.</p></section>
+          <section class="panel"><h2>Proteção atual</h2><p class="description">Este app é offline, não pede acesso à internet e bloqueia capturas de tela no Android. Porém, os registros locais <strong>ainda não estão criptografados em repouso</strong>. O backup protegido por senha é criptografado, mas a proteção dos dados locais será uma etapa adicional antes de vender/publicar.</p><p class="notice">Evite aparelhos compartilhados ou modificados e não envie backups, mesmo protegidos, ao repositório GitHub. Esta versão é para testes pessoais. Os lembretes são criados no próprio aparelho, sem envio de dados a servidores.</p></section>
           <section class="panel"><h2>Compartilhar com o Atlas</h2><p class="description">Para me enviar seus dados, abra o check-in de um dia e selecione <strong>Copiar para o Atlas</strong>. Depois, cole a mensagem no ChatGPT. Compartilhar automaticamente com esta conversa exigiria uma integração online adicional.</p><button class="btn btn-ghost" data-action="today-checkin">Abrir meu check-in</button></section>
           <section class="panel"><h2>Apagar dados deste aparelho</h2><p class="description">Isso apaga todos os check-ins deste navegador e não pode ser desfeito sem uma cópia de segurança.</p><button class="btn btn-danger" data-action="delete-all">Apagar todos os registros</button></section>
           <p class="privacy-note">Este diário não substitui acompanhamento psicológico ou médico. Se esse comportamento estiver causando sofrimento intenso ou prejuízo à sua rotina, buscar ajuda profissional faz parte do cuidado.</p>`;
@@ -354,7 +480,9 @@
         const previous=app.entries[app.selected];app.entries[app.selected]=entry;
         if(!save()){if(previous)app.entries[app.selected]=previous;else delete app.entries[app.selected];return false;}
         document.getElementById('save-indicator').textContent='✓ Registro salvo neste aparelho.';
-        toast('Check-in salvo com segurança no aparelho.');return true;
+        const form=document.getElementById('checkin-form');
+        if(form){const current=form.parentElement?.querySelector('.feedback, #feedback-holder');if(current)current.outerHTML=feedbackHTML(app.selected,entry.status);}
+        toast('Check-in salvo no aparelho.');return true;
       }
       function summaryText(date,entry){
         const labels={done:'Sem consumo de pornografia',slip:'Houve consumo de pornografia'};
@@ -462,6 +590,10 @@
         }
         if(e.target.id==='distress-known'){const range=document.getElementById('distress-input');range.disabled=!e.target.checked;document.getElementById('distress-output').textContent=e.target.checked?range.value+'/10':'—';}
         if(e.target.id==='import-input')importJSON(e.target.files?.[0]);
+        if(e.target.id==='reminder-count'){
+          const count=Number(e.target.value);
+          for(let i=0;i<3;i++){const field=document.getElementById('reminder-'+i);if(field)field.disabled=i>=count;}
+        }
       });
       document.addEventListener('click',e=>{
         const tab=e.target.closest('[data-tab]');if(tab){goto(tab.dataset.tab);return;}
@@ -479,6 +611,23 @@
           case 'copy-checkin':{
             const entry=readForm();if(!entry)return;
             copyText(summaryText(app.selected,entry));break;
+          }
+          case 'choose-theme':{
+            if(!themes.includes(el.dataset.theme))break;
+            prefs.theme=el.dataset.theme;savePrefs();applyTheme();render();break;
+          }
+          case 'save-reminders':{
+            const count=Number(document.getElementById('reminder-count')?.value||0);
+            const times=defaults.reminderTimes.map((d,i)=>safeTime(document.getElementById('reminder-'+i)?.value||prefs.reminderTimes[i],d));
+            if(!Number.isInteger(count)||count<0||count>3){toast('Escolha de 0 a 3 lembretes.');break;}
+            const active=times.slice(0,count);
+            if(new Set(active).size!==active.length){toast('Use horários diferentes.');break;}
+            prefs.reminderCount=count;prefs.reminderTimes=times;savePrefs();
+            if(window.RumoAndroid&&typeof window.RumoAndroid.configureReminders==='function'){
+              window.RumoAndroid.configureReminders(count,times.join(','));
+              toast(count?'Solicitando autorização para lembretes…':'Desativando lembretes…');
+            }else{toast('Preferências salvas. Lembretes exigem o APK Android.');}
+            break;
           }
           case 'export-secure':exportSecure();break;
           case 'export-json':exportJSON();break;

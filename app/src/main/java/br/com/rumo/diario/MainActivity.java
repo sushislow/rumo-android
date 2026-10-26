@@ -1,6 +1,9 @@
 package br.com.rumo.diario;
 
+import android.Manifest;
 import android.app.Activity;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -27,10 +30,13 @@ import java.nio.charset.StandardCharsets;
 public class MainActivity extends Activity {
     private static final int CREATE_DOCUMENT = 1001;
     private static final int OPEN_DOCUMENT = 1002;
+    private static final int NOTIFICATION_PERMISSION_REQUEST = 1003;
     private static final String APP_URL = "https://appassets.androidplatform.net/assets/index.html";
     private WebView webView;
     private ValueCallback<Uri[]> importFileCallback;
     private PendingExport pendingExport;
+    private int pendingReminderCount = 0;
+    private String[] pendingReminderTimes = new String[]{"08:30", "14:00", "20:30"};
 
     private static final class PendingExport {
         final String name, mime, data;
@@ -71,6 +77,11 @@ public class MainActivity extends Activity {
                 return assetLoader.shouldInterceptRequest(request.getUrl());
             }
             @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                showToolsIfRequested();
+            }
+            @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
                 // This journal works entirely offline; refuse external URLs.
@@ -109,6 +120,33 @@ public class MainActivity extends Activity {
                 });
             }
             @JavascriptInterface
+            public void configureReminders(int count, String timesCsv) {
+                runOnUiThread(() -> {
+                    if (count < 0 || count > 3 || timesCsv == null) {
+                        notifyReminderResult(false, "Escolha inválida de lembretes.");
+                        return;
+                    }
+                    String[] times = timesCsv.split(",", -1);
+                    if (times.length != 3 || !RumoReminderWorker.timesValid(times, count)) {
+                        notifyReminderResult(false, "Informe horários válidos e diferentes.");
+                        return;
+                    }
+                    if (count == 0) {
+                        RumoReminderWorker.configure(MainActivity.this, 0, times);
+                        notifyReminderResult(true, "Lembretes desativados.");
+                        return;
+                    }
+                    if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                        pendingReminderCount = count;
+                        pendingReminderTimes = times;
+                        requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, NOTIFICATION_PERMISSION_REQUEST);
+                        return;
+                    }
+                    RumoReminderWorker.configure(MainActivity.this, count, times);
+                    notifyReminderResult(true, "Lembretes ativados. O Android pode atrasar o envio.");
+                });
+            }
+            @JavascriptInterface
             public void saveFile(String filename, String mime, String contents) {
                 runOnUiThread(() -> {
                     // Preserve journal exports with Android's secure system file picker.
@@ -126,7 +164,31 @@ public class MainActivity extends Activity {
                 });
             }
         }, "RumoAndroid");
+        // Os trabalhos persistem após reiniciar; ao abrir, alinhamos horários ao fuso atual.
+        RumoReminderWorker.refreshIfEnabled(this);
         webView.loadUrl(APP_URL);
+    }
+
+    private void notifyReminderResult(boolean enabled, String message) {
+        if (webView == null) return;
+        String safe = org.json.JSONObject.quote(message);
+        webView.evaluateJavascript("window.RumoNativeNotificationsResult && window.RumoNativeNotificationsResult(" + (enabled ? "true" : "false") + "," + safe + ")", null);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == NOTIFICATION_PERMISSION_REQUEST) {
+            boolean granted = grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED;
+            if (granted) {
+                RumoReminderWorker.configure(this, pendingReminderCount, pendingReminderTimes);
+                notifyReminderResult(true, "Lembretes ativados. O Android pode atrasar o envio.");
+            } else {
+                RumoReminderWorker.configure(this, 0, pendingReminderTimes);
+                notifyReminderResult(false, "Permissão negada. Lembretes continuam desligados.");
+            }
+            pendingReminderCount = 0;
+        }
     }
 
     @Override
@@ -158,6 +220,21 @@ public class MainActivity extends Activity {
     public void onBackPressed() {
         // In-app navigation is tab based; Android Back returns to the calendar.
         webView.evaluateJavascript("(function(){var b=document.querySelector('[data-tab=calendar]');if(b)b.click();})()", null);
+    }
+
+    private void showToolsIfRequested() {
+        Intent intent = getIntent();
+        if (intent != null && intent.getBooleanExtra("rumo_open_tools", false) && webView != null) {
+            intent.removeExtra("rumo_open_tools");
+            webView.evaluateJavascript("(function(){var b=document.querySelector('[data-tab=tools]');if(b)b.click();})()", null);
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        showToolsIfRequested();
     }
 
     @Override

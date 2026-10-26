@@ -1,3 +1,15 @@
+# Rumo — Histórico de mudanças
+
+## v1.2.0 (beta) — 26/10/2026
+
+- Temas pré-definidos: Oceano, Violeta, Floresta e Areia clara, salvos localmente.
+- Lembretes Android 0-3/dia opt-in e horários configuráveis via WorkManager, sujeito a atrasos; permissão Android 13+.
+- Notificações discretas, ocultas na tela de bloqueio e sem detalhes íntimos.
+- Mensagens curtas, baseadas no status do registro, após salvar e reabrir.
+- Calendário com sinais gráficos além das cores.
+- `versionCode` atualizado para 3. Compatibilidade com `rumo_diario_v1` mantida.
+- Não há criptografia adicional para o diário em repouso. Testar Android real antes de distribuir.
+
 # Mudanças
 
 ## 1.1.0 — 26/10/2026 (beta)

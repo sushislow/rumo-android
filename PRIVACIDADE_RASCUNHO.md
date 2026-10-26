@@ -30,3 +30,8 @@ Não coletamos telemetria nem enviamos dados a terceiros na versão beta. Uma fu
 ## Contato e revisão
 
 [Incluir nome/empresa responsável, e-mail de privacidade, data de vigência, dados de contato e procedimentos para solicitações antes de publicar.]
+
+
+## Acréscimo beta 1.2 (rascunho)
+
+Se o usuário habilitar lembretes, o Rumo armazena localmente no Android a quantidade (0 a 3) e os horários selecionados, apenas para agendar notificações. Não lê dados do diário para compor notificações. Textos neutros, sem referências íntimas; o conteúdo é ocultado na tela de bloqueio. A pessoa pode desativar os lembretes no aplicativo ou nas configurações do Android. O sistema pode atrasar os disparos por economia de bateria. A preferência de tema é guardada localmente. Não há transmissão desses dados, já que o APK não requer permissão de internet. Este texto deve passar por revisão legal antes de publicação pública.

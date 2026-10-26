@@ -40,3 +40,15 @@
 - Políticas de privacidade e documentação revisadas antes de publicar/vender.
 
 **Atenção:** feedback de usabilidade não demonstra eficácia clínica. Não usar depoimentos como prova de tratamento.
+
+
+## Testes adicionais beta 1.2 (notificações e temas)
+
+- Ativar três horários diferentes. Confirmar permissão Android, recebimento eventual, comportamento após reiniciar e atraso possível em modo de economia de bateria.
+- Desativar, esperar horários que estavam programados e confirmar ausência de avisos.
+- Revogar autorização de notificações nas Configurações do Android; confirmar que app não apresenta erro.
+- Verificar que mensagem de notificação, inclusive na tela de bloqueio, não revela natureza íntima do aplicativo.
+- Alternar todos os quatro temas; verificar legibilidade, menus, calendário e check-in, inclusive leitor de tela e daltonismo.
+- Em registro antigo e novo, verificar mensagens adequadas a cada status, sem culpa ou promessa de cura.
+- Testar backup/restauração e atualização preservando `rumo_diario_v1`.
+- Pedir a voluntários adultos **se** as notificações ajudam ou incomodam. Medir desligamentos e uso voluntário; não presumir eficácia pelo número de aberturas.
