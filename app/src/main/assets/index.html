@@ -6,9 +6,10 @@
   <meta name="theme-color" content="#0b1521">
   <meta name="description" content="Diário pessoal e privado para acompanhar hábitos, gatilhos e seu progresso, um dia de cada vez.">
   <meta name="color-scheme" content="dark">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; worker-src 'self'; font-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
-  <title>Rumo — Meu diário</title>
+  <title>Rumo — Diário de progresso</title>
   <style>
     :root { --bg:#0b1421;--panel:#111f2e;--panel-alt:#17283a;--border:#284054;--muted:#a1b3c4;--text:#eff8fb;--mint:#78e1bb;--mint-dark:#173f38;--coral:#ffaba1;--coral-dark:#4e2c32;--lavender:#c5b2ff;--lavender-dark:#312c50;--cream:#fff0ce;--shadow:0 16px 45px rgba(0,0,0,.16);}
     * { box-sizing:border-box; }
@@ -151,6 +152,22 @@
       .legend { gap:10px; }
     }
     @media(max-width:365px) { .month-name { min-width:90px;font-size:.75rem; } .day { min-height:43px; } .privacy { display:none; } }
+
+    /* v1.1 — Ferramentas e novos indicadores */
+    .pill-note { display:inline-block;background:#223e48;color:#d9f8e9;border:1px solid #386359;border-radius:20px;padding:5px 9px;font-size:.75rem; }
+    .activity { padding:14px 16px;background:#162c39;border:1px solid #2e5263;border-radius:13px;margin:11px 0; }
+    .activity h3 { font-size:.96rem;margin:0 0 7px; }
+    .activity p { font-size:.88rem;color:#d2e0ea;margin:0 0 9px; }
+    .timeline { display:flex;align-items:end;gap:3px;overflow-x:auto;min-height:134px;padding:9px 1px 20px; }
+    .timeline-day { min-width:22px;flex:1;max-width:45px;display:flex;flex-direction:column;align-items:center;gap:5px;justify-content:end; }
+    .timeline-bar { width:75%;max-width:25px;min-height:3px;border-radius:7px 7px 2px 2px;background:#42576a; }
+    .timeline-bar.done {background:var(--mint);} .timeline-bar.slip {background:var(--coral);} .timeline-bar.partial {background:#c5b2ff;}
+    .timeline-label { font-size:.64rem;color:#c4d5e0; }
+    .notice {padding:12px 14px;background:#1b2d3d;border-left:3px solid #92b5cc;border-radius:7px;color:#d8e6f0;font-size:.83rem;}
+    .tool-time {font-size:2.6rem;font-variant-numeric:tabular-nums;font-weight:750;letter-spacing:-.05em;margin:9px 0;}
+    .tool-steps {padding-left:20px;line-height:1.65;color:#dae7ee;font-size:.9rem;}
+    .safe-space {color:#9de6cb;font-size:.82rem;}
+    @media(max-width:430px){ .nav-btn {font-size:.62rem;} .nav-inner {gap:3px;} }
   </style>
 </head>
 <body>
@@ -172,6 +189,7 @@
       <button class="nav-btn active" type="button" data-tab="calendar" aria-label="Calendário"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>Calendário</button>
       <button class="nav-btn" type="button" data-tab="checkin" aria-label="Registro"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h10a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2z"/><path d="M9 3h6v4H9zM8 12h8M8 16h5"/></svg>Registro</button>
       <button class="nav-btn" type="button" data-tab="stats" aria-label="Evolução"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16M7 16V9M12 16V4M17 16v-6"/></svg>Evolução</button>
+      <button class="nav-btn" type="button" data-tab="tools" aria-label="Ferramentas"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l-8 4v5c0 5 3.4 8.3 8 10 4.6-1.7 8-5 8-10V7z"/><path d="M8 12l3 3 5-6"/></svg>Ajuda rápida</button>
       <button class="nav-btn" type="button" data-tab="settings" aria-label="Dados"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="8" cy="7" r="2" fill="#101e2c"/><circle cx="16" cy="12" r="2" fill="#101e2c"/><circle cx="11" cy="17" r="2" fill="#101e2c"/></svg>Dados</button>
     </div>
   </nav>
@@ -201,6 +219,9 @@
         triggers: Array.isArray(raw?.triggers)?raw.triggers.filter(x=>triggers.includes(x)):[],
         habits: Object.fromEntries(habits.map(([key])=>[key,!!raw?.habits?.[key]])),
         bathroom: ['none','stopped','difficult'].includes(raw?.bathroom)?raw.bathroom:null,
+        distress: Number.isInteger(raw?.distress)&&raw.distress>=0&&raw.distress<=10?raw.distress:null,
+        interrupt: ['yes','no','notneeded'].includes(raw?.interrupt)?raw.interrupt:null,
+        coping: ['helped','tried','nottried'].includes(raw?.coping)?raw.coping:null,
         note: typeof raw?.note==='string'?raw.note.slice(0,4000):'',
         updatedAt: typeof raw?.updatedAt==='string'?raw.updatedAt:''
       });
@@ -214,7 +235,7 @@
         }catch(e){ return {}; }
       }
       const app={ view:'calendar',month:new Date(new Date().getFullYear(),new Date().getMonth(),1),selected:today(),entries:load() };
-      const blankEntry = () => ({status:null,urge:null,triggers:[],habits:Object.fromEntries(habits.map(([k])=>[k,false])),bathroom:null,note:'',updatedAt:''});
+      const blankEntry = () => ({status:null,urge:null,triggers:[],habits:Object.fromEntries(habits.map(([k])=>[k,false])),bathroom:null,distress:null,interrupt:null,coping:null,note:'',updatedAt:''});
       let toastTimer;
       function toast(message){
         const el=document.getElementById('toast');el.textContent=message;el.classList.add('show');
@@ -226,9 +247,9 @@
       function summaryFor(range){const list=daysBack(range).map(d=>app.entries[d]).filter(e=>e?.status);return {registered:list.length,done:list.filter(e=>e.status==='done').length,slip:list.filter(e=>e.status==='slip').length};}
       function render(){
         document.querySelectorAll('[data-tab]').forEach(btn=>{const active=btn.dataset.tab===app.view;btn.classList.toggle('active',active);btn.setAttribute('aria-current',active?'page':'false');});
-        document.getElementById('view').innerHTML=({calendar:calendarPage,checkin:checkinPage,stats:statsPage,settings:settingsPage}[app.view])();
+        document.getElementById('view').innerHTML=({calendar:calendarPage,checkin:checkinPage,stats:statsPage,tools:toolsPage,settings:settingsPage}[app.view])();
       }
-      function goto(view){app.view=view;render();window.scrollTo({top:0,behavior:'smooth'});}
+      function goto(view){stopTimer();timerRemaining=120;app.view=view;render();window.scrollTo({top:0,behavior:'smooth'});}
       function monthShift(direction){
         const newMonth = new Date(app.month.getFullYear(),app.month.getMonth()+direction,1);
         if(fmtDate(newMonth).slice(0,7)>today().slice(0,7))return;
@@ -246,7 +267,7 @@
           days+=`<button type="button" class="day ${outside?'outside':''} ${cls} ${iso===today()?'today':''} ${iso===app.selected?'selected':''}" data-date="${iso}" aria-label="${displayDate(iso)}: ${statusLabel}" ${future?'disabled title="Data futura"':''}><span class="number">${date.getDate()}</span><span class="dot" aria-hidden="true"></span></button>`;
         }
         const futureMonth = fmtDate(new Date(app.month.getFullYear(),app.month.getMonth()+1,1)).slice(0,7)>today().slice(0,7);
-        return `<section class="hero"><p class="eyebrow">Um dia de cada vez</p><h1>Seu caminho é feito de pequenos passos.</h1><p>Registre como foi seu dia, reconheça seus gatilhos e acompanhe sua evolução sem julgamentos.</p><div class="hero-actions"><button type="button" class="btn btn-primary" data-action="today-checkin">+ Fazer check-in de hoje</button></div></section>
+        return `<section class="hero"><p class="eyebrow">Um dia de cada vez</p><h1>Seu caminho é feito de pequenos passos.</h1><p>Registre como foi seu dia, reconheça seus gatilhos e acompanhe sua evolução sem julgamentos.</p><div class="hero-actions"><button type="button" class="btn btn-primary" data-action="today-checkin">+ Fazer check-in de hoje</button><button type="button" class="btn btn-secondary" data-action="open-tools">Preciso de ajuda agora</button></div></section>
           <div class="cards" aria-label="Resumo dos últimos sete dias"><div class="stat"><div class="stat-label">Dias registrados</div><div class="stat-val">${sums.registered}</div><div class="stat-detail">Últimos 7 dias</div></div><div class="stat"><div class="stat-label">Sem consumo</div><div class="stat-val" style="color:var(--mint)">${sums.done}</div><div class="stat-detail">Dias marcados</div></div><div class="stat"><div class="stat-label">Com consumo</div><div class="stat-val" style="color:var(--coral)">${sums.slip}</div><div class="stat-detail">Dias marcados</div></div></div>
           <section class="panel"><div class="panel-head"><h2>Meu calendário</h2><div class="month-nav"><button class="icon-btn" data-action="prev-month" aria-label="Mês anterior">‹</button><span class="month-name">${escapeHTML(monthName(app.month))}</span><button class="icon-btn" data-action="next-month" aria-label="Próximo mês" ${futureMonth?'disabled':''}>›</button></div></div><div class="weekdays" aria-hidden="true">${['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(x=>`<div>${x}</div>`).join('')}</div><div class="calendar">${days}</div><div class="legend"><span class="legend-item"><span class="swatch done"></span>Sem pornografia</span><span class="legend-item"><span class="swatch slip"></span>Houve consumo</span><span class="legend-item"><span class="swatch partial"></span>Registro parcial</span><span class="legend-item"><span class="swatch"></span>Sem registro</span></div><p class="soft-note">Toque em qualquer dia passado ou em hoje para preencher ou editar o registro.</p></section>
           <div class="hint">Um dia difícil não apaga os anteriores. Nosso foco é perceber padrões e tornar suas escolhas mais livres.</div>`;
@@ -261,10 +282,27 @@
           <div class="field"><div class="field-head"><span class="field-title">Intensidade máxima da vontade</span><span class="range-val" id="urge-output">${e.urge==null?'—':e.urge+'/10'}</span></div><div class="range-row"><input type="range" id="urge-input" min="0" max="10" step="1" value="${e.urge??0}" ${e.urge==null?'disabled':''} aria-label="Intensidade de 0 a 10"></div><label class="checkline"><input type="checkbox" id="urge-known" ${e.urge!=null?'checked':''}> Quero registrar a intensidade (0 = nenhuma vontade)</label></div>
           <div class="field"><div class="field-title">O que pode ter sido um gatilho?</div><p class="field-sub">Pode marcar mais de uma opção.</p><div class="chips">${triggers.map(x=>`<label class="chip"><input type="checkbox" name="triggers" value="${escapeHTML(x)}" ${e.triggers.includes(x)?'checked':''}>${escapeHTML(x)}</label>`).join('')}</div></div>
           <div class="field"><div class="field-title">Houve estimulação automática no banheiro?</div><div class="chips" style="margin-top:10px">${[['none','Não aconteceu'],['stopped','Percebi e interrompi'],['difficult','Aconteceu e tive dificuldade'],['unreported','Não avaliei']].map(([val,label])=>`<label class="chip"><input type="radio" name="bathroom" value="${val}" ${(e.bathroom||'unreported')===val?'checked':''}>${label}</label>`).join('')}</div></div>
+          <div class="field"><div class="field-head"><span class="field-title">Quanto isso afetou seu bem-estar?</span><span class="range-val" id="distress-output">${e.distress==null?'—':e.distress+'/10'}</span></div><p class="field-sub">Opcional. 0 = nenhum sofrimento; 10 = sofrimento muito intenso.</p><div class="range-row"><input type="range" id="distress-input" min="0" max="10" step="1" value="${e.distress??0}" ${e.distress==null?'disabled':''} aria-label="Sofrimento de 0 a 10"></div><label class="checkline"><input type="checkbox" id="distress-known" ${e.distress!=null?'checked':''}> Quero avaliar como me senti</label></div>
+          <div class="field"><div class="field-title">Consegui interromper um impulso ou hábito automático?</div><div class="chips">${[['yes','Sim'],['no','Não consegui'],['notneeded','Não precisei'],['','Não avaliei']].map(([v,label])=>`<label class="chip"><input type="radio" name="interrupt" value="${v}" ${(e.interrupt||'')===v?'checked':''}>${label}</label>`).join('')}</div></div>
+          <div class="field"><div class="field-title">As estratégias alternativas ajudaram?</div><div class="chips">${[['helped','Sim, ajudaram'],['tried','Tentei, mas foi difícil'],['nottried','Não tentei'],['','Não avaliei']].map(([v,label])=>`<label class="chip"><input type="radio" name="coping" value="${v}" ${(e.coping||'')===v?'checked':''}>${label}</label>`).join('')}</div></div>
           <div class="field"><div class="field-title">Hábitos que consegui praticar</div><p class="field-sub">Deixe desmarcado o que não fez, não tentou ou não precisou fazer.</p>${habits.map(([key,label])=>`<label class="checkline"><input type="checkbox" name="habit-${key}" ${e.habits[key]?'checked':''}>${escapeHTML(label)}</label>`).join('')}</div>
           <div class="field"><div class="field-title">Como me senti? (opcional)</div><p class="field-sub">Pode anotar emoções, contexto, pensamentos ou algo que aprendeu.</p><textarea name="note" maxlength="4000" placeholder="Hoje percebi que...">${escapeHTML(e.note)}</textarea></div>
           <div class="actions"><button type="submit" class="btn btn-primary">Salvar check-in</button><button type="button" class="btn btn-secondary" data-action="copy-checkin">Copiar para o Atlas</button></div><p class="save-msg" id="save-indicator">${e.updatedAt?'Último registro salvo neste aparelho.':''}</p>
           </form></section><div class="hint">Ao copiar, você pode colar o resumo na nossa conversa do ChatGPT para receber uma análise. O app não envia seus dados automaticamente.</div>`;
+      }
+      let timerRemaining=120,timerHandle=null;
+      const stopTimer=()=>{if(timerHandle!==null){clearInterval(timerHandle);timerHandle=null;}};
+      function toolsPage(){
+        return `<h1 class="section-title">Ajuda para os momentos difíceis</h1><p class="section-sub">Exercícios de autorregulação. Não são tratamento nem garantem que a vontade desapareça.</p>
+        <section class="panel"><h2>Quando surgir um impulso</h2><p class="description">O objetivo é observar o impulso sem agir automaticamente.</p>
+          <div class="activity"><h3>1. Afaste o gatilho</h3><p>Guarde o celular e, se possível, mude de ambiente. Se estiver no banheiro, conclua o que precisa e saia.</p></div>
+          <div class="activity"><h3>2. Observe por dois minutos</h3><p>Respire naturalmente. Perceba a intensidade no corpo sem brigar com a sensação.</p><div class="tool-time" id="tool-timer">02:00</div><div class="actions"><button class="btn btn-primary" data-action="timer-start">Iniciar 2 minutos</button><button class="btn btn-secondary" data-action="timer-reset">Reiniciar</button></div></div>
+          <div class="activity"><h3>3. Escolha uma ação pequena</h3><p>Ande por alguns minutos, tome água, faça uma tarefa simples ou converse com alguém. Reavalie a vontade depois.</p></div>
+          <p class="notice">Ter pensamentos ou desejo sexual não é uma recaída. O foco é decidir conscientemente como agir.</p></section>
+        <section class="panel"><h2>Questionar a justificativa automática</h2><p class="description">Se aparecer a ideia “só desta vez” ou “só um vídeo”, responda com curiosidade:</p>
+          <ol class="tool-steps"><li>O que eu espero conseguir com isso agora?</li><li>Que emoção ou situação antecedeu esse pensamento?</li><li>Que atitude pequena se aproxima da pessoa que quero ser?</li></ol></section>
+        <section class="panel"><h2>Se houve consumo</h2><p class="description">Interrompa quando perceber, registre o contexto, cuide do seu corpo e volte à rotina. Não tente compensar com punição ou manobras físicas. Uma recaída não apaga esforços anteriores.</p><button class="btn btn-ghost" data-action="today-checkin">Registrar meu dia</button></section>
+        <section class="panel"><h2>Apoio humano</h2><p class="description">Se o comportamento causar sofrimento intenso ou prejuízo frequente, procure um profissional de saúde mental. Se estiver em risco imediato, busque atendimento de emergência. No Brasil, o CVV oferece acolhimento pelo telefone 188.</p></section>`;
       }
       function statsPage(){
         const last30=daysBack(30),e30=last30.map(d=>app.entries[d]).filter(e=>e?.status),s=summaryFor(30);
@@ -276,6 +314,12 @@
         const max=Math.max(1,...sorted.map(([,v])=>v));
         return `<h1 class="section-title">Sua evolução</h1><p class="section-sub">Últimos 30 dias, considerando apenas os que você registrou.</p><div class="cards"><div class="stat"><div class="stat-label">Dias registrados</div><div class="stat-val">${s.registered}</div></div><div class="stat"><div class="stat-label">Sem consumo</div><div class="stat-val" style="color:var(--mint)">${s.done}</div></div><div class="stat"><div class="stat-label">Com consumo</div><div class="stat-val" style="color:var(--coral)">${s.slip}</div></div></div>
         <div class="small-metrics"><div class="stat"><div class="stat-label">Intensidade média registrada</div><div class="stat-val">${avg}</div><div class="stat-detail">${urgeValues.length} avaliações</div></div><div class="stat"><div class="stat-label">Dias sem consumo dentre os registrados</div><div class="stat-val">${s.registered?Math.round(s.done/s.registered*100)+'%':'—'}</div><div class="stat-detail">Não considera dias sem registro</div></div></div>
+        <section class="panel"><h2>Últimos 14 dias</h2><p class="description">Altura = vontade registrada (de 0 a 10); cor = status do dia. Ausência de dados não é contada como dia sem consumo.</p>
+        <div class="timeline" role="img" aria-label="Intensidade da vontade e status nos últimos 14 dias">${daysBack(14).map(d=>{const e=app.entries[d],height=e?.urge==null?6:Math.max(6,e.urge*10+5),cls=e?.status|| (e?'partial':'');return `<div class="timeline-day" title="${escapeHTML(displayDate(d))}: ${e?.urge==null?'sem avaliação':e.urge+'/10'}"><div class="timeline-bar ${cls}" style="height:${height}px"></div><div class="timeline-label">${parseDate(d).getDate()}</div></div>`;}).join('')}</div>
+        <div class="legend"><span class="legend-item"><span class="swatch done"></span>Sem consumo</span><span class="legend-item"><span class="swatch slip"></span>Houve consumo</span><span class="legend-item"><span class="swatch partial"></span>Parcial</span></div></section>
+        <section class="panel"><h2>Habilidades praticadas</h2><p class="description">Nos últimos 30 dias, entre registros em que a pergunta foi respondida.</p>
+        <div class="small-metrics"><div class="stat"><div class="stat-label">Dias em que interrompi um impulso</div><div class="stat-val">${last30.filter(d=>app.entries[d]?.interrupt==='yes').length}</div><div class="stat-detail">Contagem, não diagnóstico</div></div><div class="stat"><div class="stat-label">Dias em que alternativas ajudaram</div><div class="stat-val">${last30.filter(d=>app.entries[d]?.coping==='helped').length}</div><div class="stat-detail">Autopercepção registrada</div></div></div>
+        <div class="stat"><div class="stat-label">Sofrimento médio informado</div><div class="stat-val">${(()=>{const v=last30.map(d=>app.entries[d]?.distress).filter(Number.isInteger);return v.length?(v.reduce((a,b)=>a+b,0)/v.length).toFixed(1).replace('.',',')+'/10':'—';})()}</div><div class="stat-detail">Somente dias avaliados</div></div></section>
         <section class="panel"><h2>Gatilhos mais frequentes</h2><p class="description">Contagem das vezes em que cada gatilho foi marcado nos últimos 30 dias.</p>${sorted.length?sorted.map(([key,num])=>`<div class="chart-row"><div class="bar-label">${escapeHTML(key)}</div><div class="bar-track"><div class="bar-fill" style="width:${(num/max*100).toFixed(1)}%"></div></div><div class="bar-value">${num}</div></div>`).join(''):'<div class="no-data">Quando você registrar seus gatilhos, eles aparecerão aqui.</div>'}</section>
         <section class="panel"><h2>O que os números mostram?</h2><p class="description">${s.registered?`Você registrou ${s.registered} dia(s) e marcou ${s.done} sem consumo. Continue observando as situações que facilitam suas escolhas.`:'Ainda não há dias com status registrados neste período. Um único check-in já é um começo.'}</p><p class="soft-note">Esses números são apenas uma ferramenta de autoconhecimento. Não são diagnóstico nem medida do seu valor pessoal.</p></section>`;
       }
@@ -283,7 +327,8 @@
         const total=Object.keys(app.entries).length;
         return `<h1 class="section-title">Seus dados e sua privacidade</h1><p class="section-sub">Você controla as informações registradas aqui.</p>
           <section class="panel"><h2>Armazenamento local</h2><p class="description">Os check-ins ficam neste navegador, neste aparelho. Não criamos conta, não usamos servidor e não enviamos seus dados para ninguém.</p><div class="stat" style="max-width:200px"><div class="stat-label">Registros salvos</div><div class="stat-val">${total}</div></div><p class="soft-note">Importante: limpar os dados do navegador pode apagar seus registros. Use a cópia de segurança para protegê-los.</p></section>
-          <section class="panel"><h2>Cópia de segurança</h2><p class="description">Salve um arquivo JSON para restaurar seus registros depois, ou CSV para abrir numa planilha. Guarde-os em local privado.</p><div class="actions"><button class="btn btn-primary" data-action="export-json">Exportar cópia JSON</button><button class="btn btn-secondary" data-action="export-csv">Exportar CSV</button><button class="btn btn-secondary" data-action="import-json">Importar cópia</button></div><input id="import-input" class="file-input" type="file" accept=".json,application/json" aria-label="Importar JSON"></section>
+          <section class="panel"><h2>Cópia de segurança</h2><p class="description">Prefira a cópia protegida por senha (AES-GCM). Uma senha esquecida não pode ser recuperada. JSON simples e CSV contêm dados íntimos legíveis — somente exporte se realmente precisar.</p><div class="actions"><button class="btn btn-primary" data-action="export-secure">Backup protegido por senha</button><button class="btn btn-secondary" data-action="import-json">Restaurar backup</button><button class="btn btn-ghost" data-action="export-json">JSON sem proteção</button><button class="btn btn-ghost" data-action="export-csv">CSV sem proteção</button></div><input id="import-input" class="file-input" type="file" accept=".json,application/json" aria-label="Importar JSON"></section>
+          <section class="panel"><h2>Proteção atual</h2><p class="description">Este app é offline, não pede acesso à internet e bloqueia capturas de tela no Android. Porém, os registros locais <strong>ainda não estão criptografados em repouso</strong>. O backup protegido por senha é criptografado, mas a proteção dos dados locais será uma etapa adicional antes de vender/publicar.</p><p class="notice">Evite aparelhos compartilhados ou modificados e não envie backups, mesmo protegidos, ao repositório GitHub. Esta versão é para testes pessoais.</p></section>
           <section class="panel"><h2>Compartilhar com o Atlas</h2><p class="description">Para me enviar seus dados, abra o check-in de um dia e selecione <strong>Copiar para o Atlas</strong>. Depois, cole a mensagem no ChatGPT. Compartilhar automaticamente com esta conversa exigiria uma integração online adicional.</p><button class="btn btn-ghost" data-action="today-checkin">Abrir meu check-in</button></section>
           <section class="panel"><h2>Apagar dados deste aparelho</h2><p class="description">Isso apaga todos os check-ins deste navegador e não pode ser desfeito sem uma cópia de segurança.</p><button class="btn btn-danger" data-action="delete-all">Apagar todos os registros</button></section>
           <p class="privacy-note">Este diário não substitui acompanhamento psicológico ou médico. Se esse comportamento estiver causando sofrimento intenso ou prejuízo à sua rotina, buscar ajuda profissional faz parte do cuidado.</p>`;
@@ -297,6 +342,9 @@
           triggers:data.getAll('triggers'),
           habits:Object.fromEntries(habits.map(([key])=>[key,data.has('habit-'+key)])),
           bathroom:data.get('bathroom')==='unreported'?null:data.get('bathroom'),
+          distress:document.getElementById('distress-known')?.checked?Number(document.getElementById('distress-input').value):null,
+          interrupt:data.get('interrupt')||null,
+          coping:data.get('coping')||null,
           note:String(data.get('note')||''),updatedAt:new Date().toISOString()
         });
       }
@@ -316,13 +364,16 @@
           `Vontade máxima: ${entry.urge==null?'Não avaliada':entry.urge+'/10'}\n`+
           `Gatilhos: ${entry.triggers.length?entry.triggers.join(', '):'Não informados'}\n`+
           `Estimulação automática no banheiro: ${bathrooms[entry.bathroom]||'Não avaliada'}\n`+
+          `Sofrimento: ${entry.distress==null?'Não avaliado':entry.distress+'/10'}\n`+
+          `Consegui interromper impulso: ${{yes:'Sim',no:'Não',notneeded:'Não precisei'}[entry.interrupt]||'Não avaliado'}\n`+
+          `Estratégias alternativas: ${{helped:'Ajudaram',tried:'Tentei, foi difícil',nottried:'Não tentei'}[entry.coping]||'Não avaliado'}\n`+
           `Hábitos: \n${habits.map(([key,label])=>'['+(entry.habits[key]?'x':' ')+'] '+label).join('\n')}\n`+
           `Observações: ${entry.note||'Nenhuma'}\n`+
           `Analise meu progresso nesta conversa sem me julgar e sugira um próximo passo prático.`;
       }
       async function copyText(s){
-        if(window.RumoAndroid && typeof RumoAndroid.copyText==='function'){
-          RumoAndroid.copyText(s);
+        if(window.RumoAndroid && typeof window.RumoAndroid.copyText==='function'){
+          window.RumoAndroid.copyText(s);
           toast('Copiado! Agora cole na nossa conversa.');
           return;
         }
@@ -334,8 +385,8 @@
         }
       }
       function downloadBlob(filename,blob){
-        if(window.RumoAndroid && typeof RumoAndroid.saveFile==='function'){
-          blob.text().then(content=>RumoAndroid.saveFile(filename,blob.type||'application/octet-stream',content))
+        if(window.RumoAndroid && typeof window.RumoAndroid.saveFile==='function'){
+          blob.text().then(content=>window.RumoAndroid.saveFile(filename,blob.type||'application/octet-stream',content))
             .catch(()=>toast('Não foi possível preparar o arquivo.'));
           return;
         }
@@ -343,20 +394,56 @@
         link.href=url;link.download=filename;document.body.append(link);link.click();link.remove();
         setTimeout(()=>URL.revokeObjectURL(url),1000);
       }
-      function exportJSON(){const payload={app:'Rumo',version:1,exportedAt:new Date().toISOString(),entries:app.entries};downloadBlob('rumo-backup-'+today()+'.json',new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'}));toast(window.RumoAndroid?'Escolha onde salvar o backup.':'Cópia de segurança criada.');}
+      function exportJSON(){if(!confirm('Backup sem criptografia: seus registros poderão ser lidos por quem tiver este arquivo. Deseja continuar?'))return;const payload={app:'Rumo',version:2,exportedAt:new Date().toISOString(),entries:app.entries};downloadBlob('rumo-backup-'+today()+'.json',new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'}));toast(window.RumoAndroid?'Escolha onde salvar o backup.':'Cópia de segurança criada.');}
       function exportCSV(){
-        const headers=['Data','Status','Vontade máxima','Gatilhos','Banheiro',...habits.map(([,label])=>label),'Observações'];
-        const rows=Object.entries(app.entries).sort(([a],[b])=>a.localeCompare(b)).map(([date,e])=>[date,e.status==='done'?'Sem consumo':e.status==='slip'?'Houve consumo':'Não avaliado',e.urge??'',e.triggers.join('; '),e.bathroom||'',...habits.map(([key])=>e.habits[key]?'Sim':'Não'),e.note]);
+        if(!confirm('O CSV contém informações íntimas sem criptografia. Deseja continuar?'))return;
+        const headers=['Data','Status','Vontade máxima','Gatilhos','Banheiro','Sofrimento','Interrompi impulso','Estratégias',...habits.map(([,label])=>label),'Observações'];
+        const rows=Object.entries(app.entries).sort(([a],[b])=>a.localeCompare(b)).map(([date,e])=>[date,e.status==='done'?'Sem consumo':e.status==='slip'?'Houve consumo':'Não avaliado',e.urge??'',e.triggers.join('; '),e.bathroom||'',e.distress??'',e.interrupt||'',e.coping||'',...habits.map(([key])=>e.habits[key]?'Sim':'Não'),e.note]);
         const q=x=>'"'+String(x??'').replace(/"/g,'""')+'"';
         const csv='\ufeff'+[headers,...rows].map(row=>row.map(q).join(',')).join('\r\n');
         downloadBlob('rumo-registros-'+today()+'.csv',new Blob([csv],{type:'text/csv;charset=utf-8'}));toast(window.RumoAndroid?'Escolha onde salvar o CSV.':'CSV exportado.');
+      }
+      const bytesTo64=bytes=>btoa(String.fromCharCode(...bytes));
+      const from64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+      async function keyFromPassword(password,salt){
+        const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveKey']);
+        return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+      }
+      async function exportSecure(){
+        if(!crypto?.subtle){toast('Criptografia indisponível neste aparelho.');return;}
+        const password=prompt('Crie uma senha forte (mínimo 10 caracteres) para proteger este backup:');
+        if(password===null)return;
+        if(password.length<10){toast('Escolha pelo menos 10 caracteres.');return;}
+        const again=prompt('Repita a senha do backup:');
+        if(again!==password){toast('As senhas não conferem.');return;}
+        try{
+          const salt=crypto.getRandomValues(new Uint8Array(16));
+          const iv=crypto.getRandomValues(new Uint8Array(12));
+          const key=await keyFromPassword(password,salt);
+          const payload={app:'Rumo',version:2,exportedAt:new Date().toISOString(),entries:app.entries};
+          const cipher=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(JSON.stringify(payload))));
+          const safe={app:'Rumo',version:2,encrypted:true,kdf:'PBKDF2-SHA256',iterations:250000,algorithm:'AES-256-GCM',salt:bytesTo64(salt),iv:bytesTo64(iv),ciphertext:bytesTo64(cipher)};
+          downloadBlob('rumo-backup-protegido-'+today()+'.json',new Blob([JSON.stringify(safe)],{type:'application/json;charset=utf-8'}));
+          toast('Escolha onde guardar o backup protegido.');
+        }catch(e){toast('Falha ao preparar o backup protegido.');}
+      }
+      async function decryptBackup(wrapper){
+        if(wrapper?.version!==2||wrapper?.algorithm!=='AES-256-GCM'||wrapper?.iterations!==250000||wrapper?.kdf!=='PBKDF2-SHA256')throw Error('Formato de criptografia incompatível');
+        const salt=from64(wrapper.salt||''),iv=from64(wrapper.iv||''),ciphertext=from64(wrapper.ciphertext||'');
+        if(salt.length!==16||iv.length!==12||ciphertext.length<16)throw Error('Cópia inválida');
+        const password=prompt('Senha para desbloquear esta cópia de segurança:');
+        if(password===null)throw Error('Cancelado');
+        const key=await keyFromPassword(password,salt);
+        const clear=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,ciphertext);
+        return JSON.parse(new TextDecoder().decode(clear));
       }
       async function importJSON(file){
         if(!file)return;
         try {
           if(file.size>4000000)throw new Error('Arquivo grande demais');
-          const raw=JSON.parse(await file.text());
-          if(raw?.app!=='Rumo'||raw?.version!==1||!raw.entries||typeof raw.entries!=='object'||Array.isArray(raw.entries))throw new Error('Formato inválido');
+          let raw=JSON.parse(await file.text());
+          if(raw?.encrypted===true)raw=await decryptBackup(raw);
+          if(raw?.app!=='Rumo'||![1,2].includes(raw?.version)||!raw.entries||typeof raw.entries!=='object'||Array.isArray(raw.entries))throw new Error('Formato inválido');
           const clean={};for(const [date,e]of Object.entries(raw.entries)){if(!isISO(date)||date>today()||!e||typeof e!=='object')continue;clean[date]=sanitizeEntry(e);}
           const count=Object.keys(clean).length;
           if(!confirm(`Importar ${count} registro(s)? Dias que já existem neste aparelho serão substituídos pelos da cópia. Os demais serão preservados.`))return;
@@ -366,12 +453,14 @@
         }catch(e){toast('Não foi possível importar. Verifique a cópia JSON do Rumo.');}
       }
       document.addEventListener('submit',e=>{if(e.target.id==='checkin-form'){e.preventDefault();storeCheckin();}});
-      document.addEventListener('input',e=>{if(e.target.id==='urge-input')document.getElementById('urge-output').textContent=e.target.value+'/10';});
+      document.addEventListener('input',e=>{if(e.target.id==='urge-input')document.getElementById('urge-output').textContent=e.target.value+'/10';
+        if(e.target.id==='distress-input')document.getElementById('distress-output').textContent=e.target.value+'/10';});
       document.addEventListener('change',e=>{
         if(e.target.id==='urge-known'){
           const range=document.getElementById('urge-input');range.disabled=!e.target.checked;
           document.getElementById('urge-output').textContent=e.target.checked?range.value+'/10':'—';
         }
+        if(e.target.id==='distress-known'){const range=document.getElementById('distress-input');range.disabled=!e.target.checked;document.getElementById('distress-output').textContent=e.target.checked?range.value+'/10':'—';}
         if(e.target.id==='import-input')importJSON(e.target.files?.[0]);
       });
       document.addEventListener('click',e=>{
@@ -382,12 +471,16 @@
         const el=e.target.closest('[data-action]');if(!el)return;
         switch(el.dataset.action){
           case 'today-checkin':app.selected=today();goto('checkin');break;
+          case 'open-tools':goto('tools');break;
+          case 'timer-start':{ if(timerHandle!==null)return;const btn=el;btn.disabled=true; timerHandle=setInterval(()=>{timerRemaining=Math.max(0,timerRemaining-1);const display=document.getElementById('tool-timer');if(display)display.textContent=String(Math.floor(timerRemaining/60)).padStart(2,'0')+':'+String(timerRemaining%60).padStart(2,'0');if(timerRemaining===0){stopTimer();toast('Dois minutos concluídos. Como está a vontade agora?');}},1000);break;}
+          case 'timer-reset':stopTimer();timerRemaining=120;const t=document.getElementById('tool-timer');if(t)t.textContent='02:00';document.querySelector('[data-action=timer-start]').disabled=false;break;
           case 'prev-month':monthShift(-1);break;
           case 'next-month':monthShift(1);break;
           case 'copy-checkin':{
             const entry=readForm();if(!entry)return;
             copyText(summaryText(app.selected,entry));break;
           }
+          case 'export-secure':exportSecure();break;
           case 'export-json':exportJSON();break;
           case 'export-csv':exportCSV();break;
           case 'import-json':document.getElementById('import-input')?.click();break;

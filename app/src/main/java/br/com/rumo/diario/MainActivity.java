@@ -16,6 +16,7 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.Toast;
+import android.view.WindowManager;
 
 import androidx.webkit.WebViewAssetLoader;
 import androidx.webkit.WebViewClientCompat;
@@ -43,6 +44,8 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
+        // Prevent accidental screenshots and recent-app previews of sensitive diary entries.
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
         getWindow().setStatusBarColor(Color.rgb(11, 20, 33));
         getWindow().setNavigationBarColor(Color.rgb(16, 30, 44));
         webView = new WebView(this);

@@ -27,6 +27,8 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
+      - name: Testar lógica do diário
+        run: node tests/rumo-smoke.js
       - name: Gerar APK de testes
         run: gradle :app:assembleDebug --no-daemon --stacktrace
       - name: Disponibilizar APK
