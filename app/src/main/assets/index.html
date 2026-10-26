@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1521">
+  <meta name="description" content="Diário pessoal e privado para acompanhar hábitos, gatilhos e seu progresso, um dia de cada vez.">
+  <meta name="color-scheme" content="dark">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <title>Rumo — Meu diário</title>
+  <style>
+    :root { --bg:#0b1421;--panel:#111f2e;--panel-alt:#17283a;--border:#284054;--muted:#a1b3c4;--text:#eff8fb;--mint:#78e1bb;--mint-dark:#173f38;--coral:#ffaba1;--coral-dark:#4e2c32;--lavender:#c5b2ff;--lavender-dark:#312c50;--cream:#fff0ce;--shadow:0 16px 45px rgba(0,0,0,.16);}
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; color:var(--text);background:var(--bg);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.45; }
+    button,input,textarea { font:inherit; }
+    button { cursor:pointer; }
+    button:focus-visible,input:focus-visible,textarea:focus-visible { outline:3px solid var(--lavender);outline-offset:3px; }
+    button:disabled { cursor:not-allowed;opacity:.35; }
+    .wrap { max-width:880px; margin:0 auto; padding:25px 20px 120px; }
+    .brand { display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 0 23px; }
+    .brand-main { display:flex;align-items:center;gap:12px; }
+    .symbol { display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:linear-gradient(140deg,#86f1c4,#4ac8b0);color:#10342f;box-shadow:0 8px 30px #2aa98f33; }
+    .symbol svg { width:24px;height:24px; }
+    .brand-name { font-size:1.18rem;font-weight:800;letter-spacing:.3px;line-height:1; }
+    .brand-sub { color:var(--muted);font-size:.75rem;margin-top:4px; }
+    .privacy { font-size:.75rem;color:var(--mint);border:1px solid #336859;background:#14372f;border-radius:40px;padding:7px 10px;white-space:nowrap;display:flex;align-items:center;gap:5px; }
+    .privacy:before { content:"";width:6px;height:6px;background:var(--mint);border-radius:50%; }
+    .hero { position:relative;overflow:hidden;background:linear-gradient(115deg,#173c3a,#132d3d 65%,#1a2846);padding:29px 26px 27px;border:1px solid #315451;border-radius:23px;margin-bottom:18px; }
+    .hero:after { content:"";position:absolute;right:-66px;top:-93px;border:1px solid #8ee4cf3d;border-radius:50%;width:230px;height:230px;box-shadow:0 0 0 32px #8ee4cf09,0 0 0 75px #8ee4cf07;pointer-events:none; }
+    .eyebrow { color:var(--mint);font-size:.79rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;margin:0 0 10px; }
+    h1 { font-size:clamp(1.75rem,4vw,2.45rem);letter-spacing:-.036em;line-height:1.12;margin:0 0 12px;max-width:520px; }
+    .hero p:last-of-type { margin:0;color:#c4dce0;font-size:.95rem;max-width:540px; }
+    .hero .hero-actions { margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;position:relative;z-index:1; }
+    .btn { display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid transparent;padding:11px 15px;border-radius:11px;font-weight:700;font-size:.88rem;min-height:43px;text-decoration:none;transition:background .15s, transform .15s,color .15s; }
+    .btn:active { transform:translateY(1px); }
+    .btn-primary { background:var(--mint);color:#10312d; }
+    .btn-primary:hover { background:#98edcd; }
+    .btn-secondary { background:#263c48;color:#f4faff;border-color:#385562; }
+    .btn-secondary:hover { background:#345061; }
+    .btn-ghost { background:transparent;color:var(--mint);border-color:#456a68; }
+    .btn-ghost:hover { background:#1c3b39; }
+    .btn-danger { background:var(--coral-dark);color:#ffc6c0;border-color:#a55b62; }
+    .btn-small { font-size:.81rem;padding:8px 11px;min-height:36px; }
+    .cards { display:grid;grid-template-columns:repeat(3, minmax(0,1fr));gap:12px;margin:0 0 19px; }
+    .stat { background:var(--panel);border:1px solid var(--border);padding:17px 19px;border-radius:16px;min-width:0; }
+    .stat-label { color:var(--muted);font-size:.78rem;line-height:1.35; }
+    .stat-val { font-size:1.85rem;letter-spacing:-.06em;font-weight:790;line-height:1.25;margin-top:4px; }
+    .stat-detail { color:#b7c8d6;font-size:.72rem; }
+    .panel { background:var(--panel);border:1px solid var(--border);border-radius:19px;padding:23px;margin-bottom:17px;box-shadow:var(--shadow); }
+    .panel h2 { font-size:1.24rem;letter-spacing:-.025em;margin:0 0 5px; }
+    .panel .description { font-size:.87rem;color:var(--muted);margin:0 0 20px; }
+    .panel-head { display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px; }
+    .panel-head h2 { margin:0; }
+    .month-nav { display:flex;align-items:center;gap:10px; }
+    .icon-btn { background:var(--panel-alt);border:1px solid var(--border);border-radius:10px;min-width:37px;min-height:37px;color:var(--text);font-size:1.25rem;line-height:1;display:grid;place-items:center; }
+    .icon-btn:hover:not(:disabled) { background:#244057; }
+    .month-name { min-width:140px;text-align:center;font-size:.99rem;font-weight:750;text-transform:capitalize; }
+    .weekdays { display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px;margin-bottom:8px; }
+    .weekdays div { text-align:center;color:var(--muted);font-size:.76rem;font-weight:650; }
+    .calendar { display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px; }
+    .day { position:relative;display:flex;align-items:center;justify-content:center;min-width:0;min-height:62px;flex-direction:column;gap:3px;border:1px solid #2a4053;color:var(--text);background:#182839;border-radius:11px; }
+    .day .number { font-size:.94rem;font-weight:700; }
+    .day .dot { width:6px;height:6px;border-radius:50%;background:transparent; }
+    .day.outside { opacity:.32;background:transparent; }
+    .day.done { background:var(--mint-dark);border-color:#346e5f; }
+    .day.done .number { color:#a9f4d5; }
+    .day.done .dot { background:var(--mint); }
+    .day.slip { background:var(--coral-dark);border-color:#895057; }
+    .day.slip .number { color:#ffd0cb; }
+    .day.slip .dot { background:var(--coral); }
+    .day.partial { background:var(--lavender-dark);border-color:#65558c; }
+    .day.partial .dot { background:var(--lavender); }
+    .day.today { outline:2px solid #a3bfd0;outline-offset:1px; }
+    .day.selected { box-shadow:inset 0 0 0 2px var(--cream); }
+    .day:not(.outside):hover:not(:disabled) { filter:brightness(1.16); }
+    .legend { display:flex;flex-wrap:wrap;gap:15px;margin-top:17px;color:#b4c6d6;font-size:.8rem; }
+    .legend-item { display:flex;align-items:center;gap:7px; }
+    .swatch { width:12px;height:12px;border-radius:4px;background:#233a4d;border:1px solid #426074; }
+    .swatch.done { background:var(--mint);border-color:var(--mint); }
+    .swatch.slip { background:var(--coral);border-color:var(--coral); }
+    .swatch.partial { background:var(--lavender);border-color:var(--lavender); }
+    .soft-note { color:#b9cdd5;font-size:.86rem;margin:15px 0 0; }
+    .hint { background:#1a303d;border-left:3px solid #74cfb9;border-radius:0 10px 10px 0;padding:13px 15px;color:#cadbdc;font-size:.85rem;margin-bottom:18px; }
+    .section-title { font-size:1.48rem;line-height:1.2;letter-spacing:-.028em;margin:3px 0 8px; }
+    .section-sub { font-size:.9rem;color:var(--muted);margin:0 0 18px; }
+    .field { margin-bottom:22px; }
+    .field-head { display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px; }
+    .field-title { font-size:.92rem;font-weight:700; }
+    .field-sub { margin:4px 0 11px;font-size:.78rem;color:var(--muted); }
+    .status-group { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px; }
+    .option { display:flex;align-items:center;justify-content:center;text-align:center;border:1px solid #385268;background:#1b3041;min-height:64px;padding:10px 6px;border-radius:12px;color:#c6d7e3;font-size:.84rem;font-weight:700;cursor:pointer; }
+    .option input { position:absolute;opacity:0;width:1px;height:1px; }
+    .option:has(input:checked) { border-color:#a5e9d1;background:#1b413a;color:#baf7de;box-shadow:0 0 0 1px #64d0a6; }
+    .option.slip:has(input:checked) { background:#4a2d34;border-color:#ffb2a9;color:#ffd9d5;box-shadow:0 0 0 1px #ff9a8f; }
+    .option:has(input:focus-visible) { outline:3px solid var(--lavender);outline-offset:2px; }
+    .chips { display:flex;flex-wrap:wrap;gap:8px; }
+    .chip { position:relative;border:1px solid #385368;padding:9px 13px;border-radius:30px;color:#c0d3df;font-size:.81rem;background:#1b3041;cursor:pointer; }
+    .chip input { position:absolute;opacity:0;width:1px;height:1px; }
+    .chip:has(input:checked) { background:#24483f;color:#bdf1dd;border-color:#73d6b4; }
+    .chip:has(input:focus-visible) { outline:3px solid var(--lavender);outline-offset:2px; }
+    .checkline { display:flex;align-items:flex-start;gap:11px;font-size:.88rem;color:#deecf4;padding:10px 0;cursor:pointer; }
+    .checkline input { margin-top:3px;accent-color:#6bdab3;width:17px;height:17px;flex:none; }
+    .range-row { display:flex;gap:18px;align-items:center; }
+    .range-row input[type=range] { width:100%;accent-color:var(--mint); }
+    .range-val { min-width:50px;font-size:1rem;font-weight:800;text-align:right; }
+    textarea { width:100%;resize:vertical;min-height:104px;background:#1b3041;border:1px solid #486073;border-radius:11px;color:var(--text);padding:12px 13px;font-size:.87rem; }
+    textarea::placeholder { color:#819aab; }
+    .actions { display:flex;flex-wrap:wrap;gap:10px;align-items:center; }
+    .save-msg { color:var(--mint);font-size:.82rem;min-height:21px; }
+    .chart-row { display:flex;align-items:center;gap:12px;margin:14px 0; }
+    .bar-label { flex:0 0 95px;color:#c3d3de;font-size:.8rem; }
+    .bar-track { background:#263a49;height:16px;border-radius:50px;flex:1;overflow:hidden; }
+    .bar-fill { height:100%;background:#74d3b0;border-radius:50px;min-width:0; }
+    .bar-value { flex:0 0 45px;text-align:right;font-size:.82rem;color:#d4e1e9; }
+    .no-data { color:var(--muted);font-size:.86rem;padding:12px 0; }
+    .file-input { display:none; }
+    .privacy-note { font-size:.85rem;color:var(--muted); }
+    .small-metrics { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:19px; }
+    .footer { color:#7e99ac;font-size:.73rem;text-align:center;margin:25px 0; }
+    .nav { position:fixed;z-index:10;left:0;right:0;bottom:0;background:#101e2cf5;border-top:1px solid #355064;box-shadow:0 -8px 28px #0003;backdrop-filter:blur(14px);padding:9px max(12px,env(safe-area-inset-right)) calc(9px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));display:flex;justify-content:center;gap:5px; }
+    .nav-inner { display:flex;width:min(100%,650px);gap:5px; }
+    .nav-btn { border:0;background:none;color:#91aabd;flex:1;min-width:0;border-radius:11px;padding:9px 3px 8px;font-size:.69rem;font-weight:750;display:flex;align-items:center;flex-direction:column;gap:4px; }
+    .nav-btn svg { width:20px;height:20px;stroke-width:1.8; }
+    .nav-btn.active { color:var(--mint);background:#214139; }
+    .toast { position:fixed;z-index:30;bottom:98px;left:50%;transform:translate(-50%,20px);opacity:0;pointer-events:none;width:max-content;max-width:calc(100vw - 30px);text-align:center;background:#e8faee;color:#144a37;font-weight:650;border-radius:11px;padding:13px 18px;box-shadow:0 18px 45px #0007;transition:opacity .2s,transform .2s;font-size:.84rem; }
+    .toast.show { opacity:1;transform:translate(-50%,0); }
+    .muted { color:var(--muted); }
+    .date-heading { color:var(--mint);font-size:.8rem;font-weight:700;margin-bottom:5px;text-transform:capitalize; }
+    @media(max-width:580px) {
+      .wrap { padding:18px 13px 107px; }
+      .brand { margin-bottom:15px; }
+      .privacy { font-size:.66rem;padding:6px 8px; }
+      .hero { padding:23px 19px;border-radius:18px; }
+      .hero p:last-of-type { font-size:.88rem; }
+      .cards { gap:7px; }
+      .stat { padding:12px 11px;border-radius:13px; }
+      .stat-label { font-size:.68rem; }
+      .stat-val { font-size:1.55rem; }
+      .stat-detail { font-size:.63rem; }
+      .panel { padding:17px 13px;border-radius:15px; }
+      .month-nav { gap:4px; }
+      .month-name { min-width:106px;font-size:.83rem; }
+      .icon-btn { min-width:32px;min-height:32px; }
+      .calendar,.weekdays { gap:4px; }
+      .day { min-height:48px;border-radius:9px; }
+      .day .number { font-size:.83rem; }
+      .status-group { gap:6px; }
+      .option { min-height:69px;font-size:.72rem; }
+      .legend { gap:10px; }
+    }
+    @media(max-width:365px) { .month-name { min-width:90px;font-size:.75rem; } .day { min-height:43px; } .privacy { display:none; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="brand">
+      <div class="brand-main">
+        <div class="symbol" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/><path d="M6 5l2-2M17 20l2-2" opacity=".65"/></svg>
+        </div>
+        <div><div class="brand-name">Rumo</div><div class="brand-sub">Seu diário de progresso</div></div>
+      </div>
+      <div class="privacy">Privado neste aparelho</div>
+    </header>
+    <main id="view" aria-live="polite"></main>
+    <footer class="footer">Um registro não define você. Avançar também é aprender.</footer>
+  </div>
+  <nav class="nav" aria-label="Navegação principal">
+    <div class="nav-inner">
+      <button class="nav-btn active" type="button" data-tab="calendar" aria-label="Calendário"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>Calendário</button>
+      <button class="nav-btn" type="button" data-tab="checkin" aria-label="Registro"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h10a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2z"/><path d="M9 3h6v4H9zM8 12h8M8 16h5"/></svg>Registro</button>
+      <button class="nav-btn" type="button" data-tab="stats" aria-label="Evolução"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16M7 16V9M12 16V4M17 16v-6"/></svg>Evolução</button>
+      <button class="nav-btn" type="button" data-tab="settings" aria-label="Dados"><svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/><circle cx="8" cy="7" r="2" fill="#101e2c"/><circle cx="16" cy="12" r="2" fill="#101e2c"/><circle cx="11" cy="17" r="2" fill="#101e2c"/></svg>Dados</button>
+    </div>
+  </nav>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script>
+    (() => {
+      'use strict';
+      const STORAGE_KEY = 'rumo_diario_v1';
+      const habits = [
+        ['noPhone', 'Deixei o celular fora do banheiro'],
+        ['plan', 'Planejei uma atividade para quando estivesse sozinho'],
+        ['alternative', 'Usei uma alternativa saudável quando senti vontade'],
+        ['kindness', 'Registrei meus gatilhos sem me punir']
+      ];
+      const triggers = ['Sozinho com celular','Banheiro','Tédio','Ansiedade','Redes sociais','Cansaço','Outro'];
+      const today = () => { const d = new Date(); return fmtDate(d); };
+      const fmtDate = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      const parseDate = iso => { const [y,m,d] = iso.split('-').map(Number); return new Date(y,m-1,d,12); };
+      const moveDate = (iso,days) => { const d=parseDate(iso); d.setDate(d.getDate()+days); return fmtDate(d); };
+      const isISO = s => typeof s==='string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && fmtDate(parseDate(s))===s;
+      const displayDate = (iso,opts={day:'numeric',month:'long',year:'numeric'}) => parseDate(iso).toLocaleDateString('pt-BR',opts);
+      const monthName = d => d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+      const escapeHTML = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      const sanitizeEntry = raw => ({
+        status: ['done','slip'].includes(raw?.status)?raw.status:null,
+        urge: Number.isInteger(raw?.urge) && raw.urge>=0 && raw.urge<=10?raw.urge:null,
+        triggers: Array.isArray(raw?.triggers)?raw.triggers.filter(x=>triggers.includes(x)):[],
+        habits: Object.fromEntries(habits.map(([key])=>[key,!!raw?.habits?.[key]])),
+        bathroom: ['none','stopped','difficult'].includes(raw?.bathroom)?raw.bathroom:null,
+        note: typeof raw?.note==='string'?raw.note.slice(0,4000):'',
+        updatedAt: typeof raw?.updatedAt==='string'?raw.updatedAt:''
+      });
+      function load() {
+        try {
+          const raw=localStorage.getItem(STORAGE_KEY);if(!raw)return {};
+          const parsed=JSON.parse(raw);if(typeof parsed!=='object'||!parsed||Array.isArray(parsed))return {};
+          const result={};
+          for(const [date,entry] of Object.entries(parsed)) if(isISO(date)&&entry&&typeof entry==='object')result[date]=sanitizeEntry(entry);
+          return result;
+        }catch(e){ return {}; }
+      }
+      const app={ view:'calendar',month:new Date(new Date().getFullYear(),new Date().getMonth(),1),selected:today(),entries:load() };
+      const blankEntry = () => ({status:null,urge:null,triggers:[],habits:Object.fromEntries(habits.map(([k])=>[k,false])),bathroom:null,note:'',updatedAt:''});
+      let toastTimer;
+      function toast(message){
+        const el=document.getElementById('toast');el.textContent=message;el.classList.add('show');
+        clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),3200);
+      }
+      function save(){ try { localStorage.setItem(STORAGE_KEY,JSON.stringify(app.entries));return true; }catch(err){toast('Não foi possível salvar. Faça uma cópia dos dados.');return false;} }
+      const daysBetween = (from,to) => Math.round((parseDate(to)-parseDate(from))/86400000);
+      function daysBack(n){const values=[];for(let i=n-1;i>=0;i--)values.push(moveDate(today(),-i));return values;}
+      function summaryFor(range){const list=daysBack(range).map(d=>app.entries[d]).filter(e=>e?.status);return {registered:list.length,done:list.filter(e=>e.status==='done').length,slip:list.filter(e=>e.status==='slip').length};}
+      function render(){
+        document.querySelectorAll('[data-tab]').forEach(btn=>{const active=btn.dataset.tab===app.view;btn.classList.toggle('active',active);btn.setAttribute('aria-current',active?'page':'false');});
+        document.getElementById('view').innerHTML=({calendar:calendarPage,checkin:checkinPage,stats:statsPage,settings:settingsPage}[app.view])();
+      }
+      function goto(view){app.view=view;render();window.scrollTo({top:0,behavior:'smooth'});}
+      function monthShift(direction){
+        const newMonth = new Date(app.month.getFullYear(),app.month.getMonth()+direction,1);
+        if(fmtDate(newMonth).slice(0,7)>today().slice(0,7))return;
+        app.month=newMonth;render();
+      }
+      function calendarPage(){
+        const sums=summaryFor(7),first=new Date(app.month.getFullYear(),app.month.getMonth(),1),offset=(first.getDay()+6)%7,lastDay=new Date(app.month.getFullYear(),app.month.getMonth()+1,0).getDate();
+        const total=Math.ceil((offset+lastDay)/7)*7;
+        let days='';
+        for(let i=0;i<total;i++){
+          const date=new Date(app.month.getFullYear(),app.month.getMonth(),i-offset+1);
+          const iso=fmtDate(date),outside=date.getMonth()!==app.month.getMonth(),future=iso>today();
+          const entry=app.entries[iso];const cls=entry?.status||(!outside&&entry?'partial':'');
+          const statusLabel=cls==='done'?'sem consumo':cls==='slip'?'houve consumo':cls==='partial'?'registro parcial':'sem registro';
+          days+=`<button type="button" class="day ${outside?'outside':''} ${cls} ${iso===today()?'today':''} ${iso===app.selected?'selected':''}" data-date="${iso}" aria-label="${displayDate(iso)}: ${statusLabel}" ${future?'disabled title="Data futura"':''}><span class="number">${date.getDate()}</span><span class="dot" aria-hidden="true"></span></button>`;
+        }
+        const futureMonth = fmtDate(new Date(app.month.getFullYear(),app.month.getMonth()+1,1)).slice(0,7)>today().slice(0,7);
+        return `<section class="hero"><p class="eyebrow">Um dia de cada vez</p><h1>Seu caminho é feito de pequenos passos.</h1><p>Registre como foi seu dia, reconheça seus gatilhos e acompanhe sua evolução sem julgamentos.</p><div class="hero-actions"><button type="button" class="btn btn-primary" data-action="today-checkin">+ Fazer check-in de hoje</button></div></section>
+          <div class="cards" aria-label="Resumo dos últimos sete dias"><div class="stat"><div class="stat-label">Dias registrados</div><div class="stat-val">${sums.registered}</div><div class="stat-detail">Últimos 7 dias</div></div><div class="stat"><div class="stat-label">Sem consumo</div><div class="stat-val" style="color:var(--mint)">${sums.done}</div><div class="stat-detail">Dias marcados</div></div><div class="stat"><div class="stat-label">Com consumo</div><div class="stat-val" style="color:var(--coral)">${sums.slip}</div><div class="stat-detail">Dias marcados</div></div></div>
+          <section class="panel"><div class="panel-head"><h2>Meu calendário</h2><div class="month-nav"><button class="icon-btn" data-action="prev-month" aria-label="Mês anterior">‹</button><span class="month-name">${escapeHTML(monthName(app.month))}</span><button class="icon-btn" data-action="next-month" aria-label="Próximo mês" ${futureMonth?'disabled':''}>›</button></div></div><div class="weekdays" aria-hidden="true">${['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(x=>`<div>${x}</div>`).join('')}</div><div class="calendar">${days}</div><div class="legend"><span class="legend-item"><span class="swatch done"></span>Sem pornografia</span><span class="legend-item"><span class="swatch slip"></span>Houve consumo</span><span class="legend-item"><span class="swatch partial"></span>Registro parcial</span><span class="legend-item"><span class="swatch"></span>Sem registro</span></div><p class="soft-note">Toque em qualquer dia passado ou em hoje para preencher ou editar o registro.</p></section>
+          <div class="hint">Um dia difícil não apaga os anteriores. Nosso foco é perceber padrões e tornar suas escolhas mais livres.</div>`;
+      }
+      function checkinPage(){
+        if(app.selected>today())app.selected=today();
+        const e=app.entries[app.selected]||blankEntry();
+        const statusOptions=[['done','✓ Sem pornografia'],['slip','↗ Houve consumo'],['none','Ainda não avaliei']];
+        return `<p class="date-heading">${escapeHTML(displayDate(app.selected,{weekday:'long',day:'numeric',month:'long',year:'numeric'}))}</p><h1 class="section-title">Meu check-in</h1><p class="section-sub">O importante é registrar com sinceridade, sem se punir.</p>
+          <section class="panel"><form id="checkin-form">
+          <div class="field"><div class="field-title">Como foi em relação à pornografia?</div><p class="field-sub">Marque o que aconteceu neste dia. Os dias sem registro permanecem neutros.</p><div class="status-group">${statusOptions.map(([value,label])=>`<label class="option ${value==='slip'?'slip':''}"><input type="radio" name="status" value="${value}" ${((e.status||'none')===value)?'checked':''}><span>${label}</span></label>`).join('')}</div></div>
+          <div class="field"><div class="field-head"><span class="field-title">Intensidade máxima da vontade</span><span class="range-val" id="urge-output">${e.urge==null?'—':e.urge+'/10'}</span></div><div class="range-row"><input type="range" id="urge-input" min="0" max="10" step="1" value="${e.urge??0}" ${e.urge==null?'disabled':''} aria-label="Intensidade de 0 a 10"></div><label class="checkline"><input type="checkbox" id="urge-known" ${e.urge!=null?'checked':''}> Quero registrar a intensidade (0 = nenhuma vontade)</label></div>
+          <div class="field"><div class="field-title">O que pode ter sido um gatilho?</div><p class="field-sub">Pode marcar mais de uma opção.</p><div class="chips">${triggers.map(x=>`<label class="chip"><input type="checkbox" name="triggers" value="${escapeHTML(x)}" ${e.triggers.includes(x)?'checked':''}>${escapeHTML(x)}</label>`).join('')}</div></div>
+          <div class="field"><div class="field-title">Houve estimulação automática no banheiro?</div><div class="chips" style="margin-top:10px">${[['none','Não aconteceu'],['stopped','Percebi e interrompi'],['difficult','Aconteceu e tive dificuldade'],['unreported','Não avaliei']].map(([val,label])=>`<label class="chip"><input type="radio" name="bathroom" value="${val}" ${(e.bathroom||'unreported')===val?'checked':''}>${label}</label>`).join('')}</div></div>
+          <div class="field"><div class="field-title">Hábitos que consegui praticar</div><p class="field-sub">Deixe desmarcado o que não fez, não tentou ou não precisou fazer.</p>${habits.map(([key,label])=>`<label class="checkline"><input type="checkbox" name="habit-${key}" ${e.habits[key]?'checked':''}>${escapeHTML(label)}</label>`).join('')}</div>
+          <div class="field"><div class="field-title">Como me senti? (opcional)</div><p class="field-sub">Pode anotar emoções, contexto, pensamentos ou algo que aprendeu.</p><textarea name="note" maxlength="4000" placeholder="Hoje percebi que...">${escapeHTML(e.note)}</textarea></div>
+          <div class="actions"><button type="submit" class="btn btn-primary">Salvar check-in</button><button type="button" class="btn btn-secondary" data-action="copy-checkin">Copiar para o Atlas</button></div><p class="save-msg" id="save-indicator">${e.updatedAt?'Último registro salvo neste aparelho.':''}</p>
+          </form></section><div class="hint">Ao copiar, você pode colar o resumo na nossa conversa do ChatGPT para receber uma análise. O app não envia seus dados automaticamente.</div>`;
+      }
+      function statsPage(){
+        const last30=daysBack(30),e30=last30.map(d=>app.entries[d]).filter(e=>e?.status),s=summaryFor(30);
+        const urgeValues=last30.map(d=>app.entries[d]?.urge).filter(v=>Number.isInteger(v));
+        const avg=urgeValues.length?(urgeValues.reduce((a,b)=>a+b,0)/urgeValues.length).toFixed(1).replace('.',','):'—';
+        const triggerMap=Object.fromEntries(triggers.map(t=>[t,0]));
+        for(const d of last30)for(const t of app.entries[d]?.triggers||[]) if(t in triggerMap)triggerMap[t]++;
+        const sorted=Object.entries(triggerMap).filter(([,n])=>n>0).sort((a,b)=>b[1]-a[1]);
+        const max=Math.max(1,...sorted.map(([,v])=>v));
+        return `<h1 class="section-title">Sua evolução</h1><p class="section-sub">Últimos 30 dias, considerando apenas os que você registrou.</p><div class="cards"><div class="stat"><div class="stat-label">Dias registrados</div><div class="stat-val">${s.registered}</div></div><div class="stat"><div class="stat-label">Sem consumo</div><div class="stat-val" style="color:var(--mint)">${s.done}</div></div><div class="stat"><div class="stat-label">Com consumo</div><div class="stat-val" style="color:var(--coral)">${s.slip}</div></div></div>
+        <div class="small-metrics"><div class="stat"><div class="stat-label">Intensidade média registrada</div><div class="stat-val">${avg}</div><div class="stat-detail">${urgeValues.length} avaliações</div></div><div class="stat"><div class="stat-label">Dias sem consumo dentre os registrados</div><div class="stat-val">${s.registered?Math.round(s.done/s.registered*100)+'%':'—'}</div><div class="stat-detail">Não considera dias sem registro</div></div></div>
+        <section class="panel"><h2>Gatilhos mais frequentes</h2><p class="description">Contagem das vezes em que cada gatilho foi marcado nos últimos 30 dias.</p>${sorted.length?sorted.map(([key,num])=>`<div class="chart-row"><div class="bar-label">${escapeHTML(key)}</div><div class="bar-track"><div class="bar-fill" style="width:${(num/max*100).toFixed(1)}%"></div></div><div class="bar-value">${num}</div></div>`).join(''):'<div class="no-data">Quando você registrar seus gatilhos, eles aparecerão aqui.</div>'}</section>
+        <section class="panel"><h2>O que os números mostram?</h2><p class="description">${s.registered?`Você registrou ${s.registered} dia(s) e marcou ${s.done} sem consumo. Continue observando as situações que facilitam suas escolhas.`:'Ainda não há dias com status registrados neste período. Um único check-in já é um começo.'}</p><p class="soft-note">Esses números são apenas uma ferramenta de autoconhecimento. Não são diagnóstico nem medida do seu valor pessoal.</p></section>`;
+      }
+      function settingsPage(){
+        const total=Object.keys(app.entries).length;
+        return `<h1 class="section-title">Seus dados e sua privacidade</h1><p class="section-sub">Você controla as informações registradas aqui.</p>
+          <section class="panel"><h2>Armazenamento local</h2><p class="description">Os check-ins ficam neste navegador, neste aparelho. Não criamos conta, não usamos servidor e não enviamos seus dados para ninguém.</p><div class="stat" style="max-width:200px"><div class="stat-label">Registros salvos</div><div class="stat-val">${total}</div></div><p class="soft-note">Importante: limpar os dados do navegador pode apagar seus registros. Use a cópia de segurança para protegê-los.</p></section>
+          <section class="panel"><h2>Cópia de segurança</h2><p class="description">Salve um arquivo JSON para restaurar seus registros depois, ou CSV para abrir numa planilha. Guarde-os em local privado.</p><div class="actions"><button class="btn btn-primary" data-action="export-json">Exportar cópia JSON</button><button class="btn btn-secondary" data-action="export-csv">Exportar CSV</button><button class="btn btn-secondary" data-action="import-json">Importar cópia</button></div><input id="import-input" class="file-input" type="file" accept=".json,application/json" aria-label="Importar JSON"></section>
+          <section class="panel"><h2>Compartilhar com o Atlas</h2><p class="description">Para me enviar seus dados, abra o check-in de um dia e selecione <strong>Copiar para o Atlas</strong>. Depois, cole a mensagem no ChatGPT. Compartilhar automaticamente com esta conversa exigiria uma integração online adicional.</p><button class="btn btn-ghost" data-action="today-checkin">Abrir meu check-in</button></section>
+          <section class="panel"><h2>Apagar dados deste aparelho</h2><p class="description">Isso apaga todos os check-ins deste navegador e não pode ser desfeito sem uma cópia de segurança.</p><button class="btn btn-danger" data-action="delete-all">Apagar todos os registros</button></section>
+          <p class="privacy-note">Este diário não substitui acompanhamento psicológico ou médico. Se esse comportamento estiver causando sofrimento intenso ou prejuízo à sua rotina, buscar ajuda profissional faz parte do cuidado.</p>`;
+      }
+      function readForm(){
+        const form=document.getElementById('checkin-form');if(!form)return null;
+        const data=new FormData(form);
+        return sanitizeEntry({
+          status:data.get('status')==='none'?null:data.get('status'),
+          urge:document.getElementById('urge-known')?.checked?Number(document.getElementById('urge-input').value):null,
+          triggers:data.getAll('triggers'),
+          habits:Object.fromEntries(habits.map(([key])=>[key,data.has('habit-'+key)])),
+          bathroom:data.get('bathroom')==='unreported'?null:data.get('bathroom'),
+          note:String(data.get('note')||''),updatedAt:new Date().toISOString()
+        });
+      }
+      function storeCheckin(){
+        if(app.selected>today()){toast('Não é possível registrar dias futuros.');return false;}
+        const entry=readForm();if(!entry)return false;
+        const previous=app.entries[app.selected];app.entries[app.selected]=entry;
+        if(!save()){if(previous)app.entries[app.selected]=previous;else delete app.entries[app.selected];return false;}
+        document.getElementById('save-indicator').textContent='✓ Registro salvo neste aparelho.';
+        toast('Check-in salvo com segurança no aparelho.');return true;
+      }
+      function summaryText(date,entry){
+        const labels={done:'Sem consumo de pornografia',slip:'Houve consumo de pornografia'};
+        const bathrooms={none:'Não aconteceu',stopped:'Percebi e interrompi',difficult:'Aconteceu e tive dificuldade'};
+        return `Meu check-in de recuperação — ${displayDate(date)}\n`+
+          `Status: ${labels[entry.status]||'Não avaliado'}\n`+
+          `Vontade máxima: ${entry.urge==null?'Não avaliada':entry.urge+'/10'}\n`+
+          `Gatilhos: ${entry.triggers.length?entry.triggers.join(', '):'Não informados'}\n`+
+          `Estimulação automática no banheiro: ${bathrooms[entry.bathroom]||'Não avaliada'}\n`+
+          `Hábitos: \n${habits.map(([key,label])=>'['+(entry.habits[key]?'x':' ')+'] '+label).join('\n')}\n`+
+          `Observações: ${entry.note||'Nenhuma'}\n`+
+          `Analise meu progresso nesta conversa sem me julgar e sugira um próximo passo prático.`;
+      }
+      async function copyText(s){
+        if(window.RumoAndroid && typeof RumoAndroid.copyText==='function'){
+          RumoAndroid.copyText(s);
+          toast('Copiado! Agora cole na nossa conversa.');
+          return;
+        }
+        try {await navigator.clipboard.writeText(s);toast('Copiado! Agora cole na nossa conversa.');}
+        catch(e){
+          const t=document.createElement('textarea');t.value=s;t.setAttribute('readonly','');t.style.position='fixed';t.style.left='-9999px';document.body.appendChild(t);t.select();
+          try {if(document.execCommand('copy'))toast('Copiado! Agora cole na nossa conversa.');else throw new Error('Falha');}
+          catch(err){toast('Não foi possível copiar neste navegador.');}finally{t.remove();}
+        }
+      }
+      function downloadBlob(filename,blob){
+        if(window.RumoAndroid && typeof RumoAndroid.saveFile==='function'){
+          blob.text().then(content=>RumoAndroid.saveFile(filename,blob.type||'application/octet-stream',content))
+            .catch(()=>toast('Não foi possível preparar o arquivo.'));
+          return;
+        }
+        const url=URL.createObjectURL(blob),link=document.createElement('a');
+        link.href=url;link.download=filename;document.body.append(link);link.click();link.remove();
+        setTimeout(()=>URL.revokeObjectURL(url),1000);
+      }
+      function exportJSON(){const payload={app:'Rumo',version:1,exportedAt:new Date().toISOString(),entries:app.entries};downloadBlob('rumo-backup-'+today()+'.json',new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'}));toast(window.RumoAndroid?'Escolha onde salvar o backup.':'Cópia de segurança criada.');}
+      function exportCSV(){
+        const headers=['Data','Status','Vontade máxima','Gatilhos','Banheiro',...habits.map(([,label])=>label),'Observações'];
+        const rows=Object.entries(app.entries).sort(([a],[b])=>a.localeCompare(b)).map(([date,e])=>[date,e.status==='done'?'Sem consumo':e.status==='slip'?'Houve consumo':'Não avaliado',e.urge??'',e.triggers.join('; '),e.bathroom||'',...habits.map(([key])=>e.habits[key]?'Sim':'Não'),e.note]);
+        const q=x=>'"'+String(x??'').replace(/"/g,'""')+'"';
+        const csv='\ufeff'+[headers,...rows].map(row=>row.map(q).join(',')).join('\r\n');
+        downloadBlob('rumo-registros-'+today()+'.csv',new Blob([csv],{type:'text/csv;charset=utf-8'}));toast(window.RumoAndroid?'Escolha onde salvar o CSV.':'CSV exportado.');
+      }
+      async function importJSON(file){
+        if(!file)return;
+        try {
+          if(file.size>4000000)throw new Error('Arquivo grande demais');
+          const raw=JSON.parse(await file.text());
+          if(raw?.app!=='Rumo'||raw?.version!==1||!raw.entries||typeof raw.entries!=='object'||Array.isArray(raw.entries))throw new Error('Formato inválido');
+          const clean={};for(const [date,e]of Object.entries(raw.entries)){if(!isISO(date)||date>today()||!e||typeof e!=='object')continue;clean[date]=sanitizeEntry(e);}
+          const count=Object.keys(clean).length;
+          if(!confirm(`Importar ${count} registro(s)? Dias que já existem neste aparelho serão substituídos pelos da cópia. Os demais serão preservados.`))return;
+          const previous=app.entries;app.entries={...app.entries,...clean};
+          if(!save()){app.entries=previous;return;}
+          render();toast(`${count} registro(s) importado(s).`);
+        }catch(e){toast('Não foi possível importar. Verifique a cópia JSON do Rumo.');}
+      }
+      document.addEventListener('submit',e=>{if(e.target.id==='checkin-form'){e.preventDefault();storeCheckin();}});
+      document.addEventListener('input',e=>{if(e.target.id==='urge-input')document.getElementById('urge-output').textContent=e.target.value+'/10';});
+      document.addEventListener('change',e=>{
+        if(e.target.id==='urge-known'){
+          const range=document.getElementById('urge-input');range.disabled=!e.target.checked;
+          document.getElementById('urge-output').textContent=e.target.checked?range.value+'/10':'—';
+        }
+        if(e.target.id==='import-input')importJSON(e.target.files?.[0]);
+      });
+      document.addEventListener('click',e=>{
+        const tab=e.target.closest('[data-tab]');if(tab){goto(tab.dataset.tab);return;}
+        const dateBtn=e.target.closest('[data-date]');if(dateBtn && !dateBtn.disabled){
+          app.selected=dateBtn.dataset.date;app.month=new Date(parseDate(app.selected).getFullYear(),parseDate(app.selected).getMonth(),1);goto('checkin');return;
+        }
+        const el=e.target.closest('[data-action]');if(!el)return;
+        switch(el.dataset.action){
+          case 'today-checkin':app.selected=today();goto('checkin');break;
+          case 'prev-month':monthShift(-1);break;
+          case 'next-month':monthShift(1);break;
+          case 'copy-checkin':{
+            const entry=readForm();if(!entry)return;
+            copyText(summaryText(app.selected,entry));break;
+          }
+          case 'export-json':exportJSON();break;
+          case 'export-csv':exportCSV();break;
+          case 'import-json':document.getElementById('import-input')?.click();break;
+          case 'delete-all':if(confirm('Tem certeza que quer apagar TODOS os registros deste aparelho? Faça um backup antes.'))if(confirm('Última confirmação: apagar definitivamente todos os registros?')){const before=app.entries;app.entries={};if(save()){render();toast('Os registros deste navegador foram apagados.');}else app.entries=before;}break;
+        }
+      });
+      render();
+      if(!window.RumoAndroid && 'serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+    })();
+  </script>
+</body>
+</html>
