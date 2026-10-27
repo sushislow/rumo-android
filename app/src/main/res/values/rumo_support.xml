@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Preencha antes de distribuir. Nunca coloque senha de e-mail neste arquivo. -->
+    <string name="support_email" translatable="false"></string>
+    <string name="rumo_widget_name">Rumo — Meu progresso</string>
+</resources>

@@ -36,7 +36,12 @@ jobs:
           chmod 600 "$RUNNER_TEMP/rumo-upload.jks"
           test -s "$RUNNER_TEMP/rumo-upload.jks"
       - name: Testar lógica do diário
-        run: node tests/rumo-smoke.js
+        run: |
+          node tests/rumo-smoke.js
+          node tests/rumo-features.js
+          mkdir -p "$RUNNER_TEMP/rumo-crypto-tests"
+          javac -d "$RUNNER_TEMP/rumo-crypto-tests" app/src/main/java/br/com/rumo/diario/VaultCrypto.java tests/VaultCryptoTest.java
+          java -cp "$RUNNER_TEMP/rumo-crypto-tests" br.com.rumo.diario.VaultCryptoTest
       - name: Compilar APK de release
         env:
           RUMO_KEYSTORE_PATH: ${{ runner.temp }}/rumo-upload.jks

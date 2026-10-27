@@ -228,6 +228,24 @@
     .feedback.partial {border-left:4px solid var(--lavender)}
     .feedback p {margin:0;color:var(--text);font-size:.9rem}
     @media (prefers-reduced-motion:reduce) {*,*:before,*:after {scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+    .new-input {width:100%;min-width:0;padding:12px;border:1px solid var(--border);border-radius:11px;background:var(--panel-alt);color:var(--text)}
+    .new-row {display:flex;gap:8px;align-items:center;margin-top:12px}.new-row .new-input{flex:1}.new-row .btn{flex:none}
+    .progress-card {margin:18px 0;padding:20px;border:1px solid var(--border);border-radius:18px;background:var(--panel)}
+    .progress-number {font-size:2rem;color:var(--mint);font-weight:800;line-height:1.1;margin:10px 0}
+    .badge-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:16px}
+    .badge {padding:15px;border:1px solid var(--border);border-radius:13px;background:var(--panel-alt)}
+    .badge.earned{border-color:var(--mint)}.badge strong{display:block;margin-bottom:6px}.badge p{font-size:.8rem;color:var(--muted);margin:5px 0}
+    .badge progress {width:100%;height:8px;accent-color:var(--mint)}
+    .feature-details summary {font-size:1.1rem;font-weight:750;cursor:pointer;min-height:40px;padding:5px 0}
+    .feature-details[open] summary {margin-bottom:14px}.feature-note {font-size:.85rem;color:var(--muted);line-height:1.55}
+    .saved-plan {border-left:4px solid var(--mint)}.saved-plan p{overflow-wrap:anywhere}.privacy-tip {margin:12px 0;padding:13px;border-radius:11px;background:var(--mint-dark);color:var(--text)}
+    .trigger-list {display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.trigger-list button{overflow-wrap:anywhere;max-width:100%}
+    .option.is-selected,.chip.is-selected{border-color:var(--mint);background:var(--mint-dark);color:var(--text);box-shadow:0 0 0 1px var(--mint)}
+    .option.slip.is-selected{border-color:var(--coral);background:var(--coral-dark);color:var(--text);box-shadow:0 0 0 1px var(--coral)}
+    :root[data-theme="areia"] .option.is-selected,:root[data-theme="areia"] .chip.is-selected{color:#124e38}
+    :root[data-theme="areia"] .option.slip.is-selected{color:#823c3c}
+    .option:focus-within,.chip:focus-within{outline:3px solid var(--lavender);outline-offset:2px}
+    @media(max-width:480px){.badge-grid{grid-template-columns:1fr}.new-row{flex-wrap:wrap}.new-row .new-input{flex-basis:100%}}
   </style>
 </head>
 <body>
@@ -254,10 +272,42 @@
     </div>
   </nav>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="./features.js"></script>
   <script>
     (() => {
       'use strict';
+      try {
+      const F=globalThis.RumoFeatures;
+      if(!F)throw Error('Recursos do aplicativo indisponíveis');
       const STORAGE_KEY = 'rumo_diario_v1';
+      const secureNative=!!(window.RumoAndroid&&typeof window.RumoAndroid.getProtectedItem==='function'
+        &&typeof window.RumoAndroid.setProtectedItem==='function'&&typeof window.RumoAndroid.migrateStorage==='function');
+      const storage={
+        getItem:key=>secureNative?window.RumoAndroid.getProtectedItem(key):localStorage.getItem(key),
+        setItem:(key,value)=>{if(secureNative){if(!window.RumoAndroid.setProtectedItem(key,value))throw Error('Falha no cofre');}else localStorage.setItem(key,value);}
+      };
+      function persistBundle(values){
+        if(secureNative){
+          if(typeof window.RumoAndroid.setProtectedBundle!=='function'||!window.RumoAndroid.setProtectedBundle(JSON.stringify(values)))throw Error('Não foi possível gravar a atualização completa');
+          return;
+        }
+        const before=Object.fromEntries(Object.keys(values).map(key=>[key,localStorage.getItem(key)]));
+        try{for(const [key,value]of Object.entries(values))localStorage.setItem(key,value);}
+        catch(error){for(const [key,value]of Object.entries(before)){try{if(value===null)localStorage.removeItem(key);else localStorage.setItem(key,value);}catch(ignored){}}throw error;}
+      }
+      if(secureNative){
+        const legacy={};
+        for(const key of [STORAGE_KEY,'rumo_preferencias_v1','rumo_conquistas_v1']){
+          const raw=localStorage.getItem(key);if(raw!==null)legacy[key]=raw;
+        }
+        if(Object.keys(legacy).length){
+          if(!window.RumoAndroid.migrateStorage(JSON.stringify(legacy)))throw Error('A migração não foi confirmada. A cópia anterior foi preservada.');
+          for(const key of Object.keys(legacy)){
+            if(storage.getItem(key)===null)throw Error('Não foi possível confirmar os registros protegidos');
+            localStorage.removeItem(key);
+          }
+        }
+      }
       const habits = [
         ['noPhone', 'Deixei o celular fora do banheiro'],
         ['plan', 'Planejei uma atividade para quando estivesse sozinho'],
@@ -271,15 +321,21 @@
       const defaults={theme:'oceano',reminderCount:0,reminderTimes:['08:30','14:00','20:30']};
       function safeTime(value,fallback){return typeof value==='string'&&/^([01]\d|2[0-3]):[0-5]\d$/.test(value)?value:fallback;}
       function loadPrefs(){
-        try{const p=JSON.parse(localStorage.getItem(PREFS_KEY)||'{}');return {
+        try{const p=JSON.parse(storage.getItem(PREFS_KEY)||'{}');return {
           theme:themes.includes(p.theme)?p.theme:defaults.theme,
           reminderCount:Number.isInteger(p.reminderCount)&&p.reminderCount>=0&&p.reminderCount<=3?p.reminderCount:0,
-          reminderTimes:defaults.reminderTimes.map((d,i)=>safeTime(p.reminderTimes?.[i],d))
+          reminderTimes:defaults.reminderTimes.map((d,i)=>safeTime(p.reminderTimes?.[i],d)),
+          customTriggers:F.labels(p.customTriggers,30),planTrigger:F.text(p.planTrigger,120),planAction:F.text(p.planAction,300),
+          quickMode:p.quickMode===true,showAchievements:p.showAchievements!==false,showCounter:p.showCounter!==false,
+          widgetEnabled:p.widgetEnabled===true,widgetMode:['total','registered','sequence'].includes(p.widgetMode)?p.widgetMode:'total'
         };}catch(e){return {...defaults,reminderTimes:[...defaults.reminderTimes]};}
       }
       let prefs=loadPrefs();
       function applyTheme(){document.documentElement.setAttribute('data-theme',prefs.theme);document.querySelector('meta[name="theme-color"]')?.setAttribute('content',prefs.theme==='areia'?'#f8f5ec':'#0b1421');}
-      function savePrefs(){localStorage.setItem(PREFS_KEY,JSON.stringify(prefs));}
+      function savePrefs(){try{storage.setItem(PREFS_KEY,JSON.stringify(prefs));return true;}catch(error){toast('Não foi possível salvar as preferências.');return false;}}
+      function setPrefs(changes){const before=prefs;prefs={...prefs,...changes};if(!savePrefs()){prefs=before;return false;}return true;}
+      function appInfo(){try{return typeof window.RumoAndroid?.getAppInfo==='function'?JSON.parse(window.RumoAndroid.getAppInfo()):{version:'1.3.0',encryptedStorage:false,supportEmail:''};}catch(error){return {version:'1.3.0',encryptedStorage:false,supportEmail:''};}}
+      function triggerOptions(entry){return F.labels([...triggers,...(prefs.customTriggers||[]),...(entry?.triggers||[])],60);}
       applyTheme();
       const congratulations=[
         'Você fez uma escolha alinhada ao seu objetivo hoje. Reconheça o esforço e mantenha sua rotina.',
@@ -334,40 +390,51 @@
       const sanitizeEntry = raw => ({
         status: ['done','slip'].includes(raw?.status)?raw.status:null,
         urge: Number.isInteger(raw?.urge) && raw.urge>=0 && raw.urge<=10?raw.urge:null,
-        triggers: Array.isArray(raw?.triggers)?raw.triggers.filter(x=>triggers.includes(x)):[],
+        triggers: F.labels(raw?.triggers,20),
         habits: Object.fromEntries(habits.map(([key])=>[key,!!raw?.habits?.[key]])),
         bathroom: ['none','stopped','difficult'].includes(raw?.bathroom)?raw.bathroom:null,
         distress: Number.isInteger(raw?.distress)&&raw.distress>=0&&raw.distress<=10?raw.distress:null,
         interrupt: ['yes','no','notneeded'].includes(raw?.interrupt)?raw.interrupt:null,
         coping: ['helped','tried','nottried'].includes(raw?.coping)?raw.coping:null,
+        strategy:F.text(raw?.strategy,300),
         note: typeof raw?.note==='string'?raw.note.slice(0,4000):'',
         updatedAt: typeof raw?.updatedAt==='string'?raw.updatedAt:''
       });
       function load() {
-        try {
-          const raw=localStorage.getItem(STORAGE_KEY);if(!raw)return {};
-          const parsed=JSON.parse(raw);if(typeof parsed!=='object'||!parsed||Array.isArray(parsed))return {};
+          const raw=storage.getItem(STORAGE_KEY);if(!raw)return {};
+          const parsed=JSON.parse(raw);if(typeof parsed!=='object'||!parsed||Array.isArray(parsed))throw Error('Formato do diário inválido; a cópia armazenada foi preservada.');
           const result={};
-          for(const [date,entry] of Object.entries(parsed)) if(isISO(date)&&entry&&typeof entry==='object')result[date]=sanitizeEntry(entry);
+          for(const [date,entry] of Object.entries(parsed)) if(isISO(date)&&date<=today()&&entry&&typeof entry==='object')result[date]=sanitizeEntry(entry);
           return result;
-        }catch(e){ return {}; }
       }
       const app={ view:'calendar',month:new Date(new Date().getFullYear(),new Date().getMonth(),1),selected:today(),entries:load() };
-      const blankEntry = () => ({status:null,urge:null,triggers:[],habits:Object.fromEntries(habits.map(([k])=>[k,false])),bathroom:null,distress:null,interrupt:null,coping:null,note:'',updatedAt:''});
+      const blankEntry = () => ({status:null,urge:null,triggers:[],habits:Object.fromEntries(habits.map(([k])=>[k,false])),bathroom:null,distress:null,interrupt:null,coping:null,strategy:'',note:'',updatedAt:''});
+      let checkinDraft=null;
+      const LEDGER_KEY='rumo_conquistas_v1';
+      let ledger=F.cleanLedger(JSON.parse(storage.getItem(LEDGER_KEY)||'{}'),today());
+      function updateProgress(){
+        const stats=F.progress(app.entries,today()),next=F.award(ledger,stats,today());
+        if(JSON.stringify(next)!==JSON.stringify(ledger)){try{storage.setItem(LEDGER_KEY,JSON.stringify(next));ledger=next;}catch(error){toast('Registro salvo; não foi possível atualizar as conquistas.');}}
+        try{if(typeof window.RumoAndroid?.syncWidget==='function')return window.RumoAndroid.syncWidget(JSON.stringify(F.widget(stats,prefs)));}
+        catch(error){return false;}return true;
+      }
+      window.RumoNativeSettingsChanged=()=>{if(app.view==='settings')render();};
       let toastTimer;
       function toast(message){
         const el=document.getElementById('toast');el.textContent=message;el.classList.add('show');
         clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),3200);
       }
-      function save(){ try { localStorage.setItem(STORAGE_KEY,JSON.stringify(app.entries));return true; }catch(err){toast('Não foi possível salvar. Faça uma cópia dos dados.');return false;} }
+      function save(){ try { storage.setItem(STORAGE_KEY,JSON.stringify(app.entries));updateProgress();return true; }catch(err){toast('Não foi possível salvar. Faça uma cópia dos dados.');return false;} }
       const daysBetween = (from,to) => Math.round((parseDate(to)-parseDate(from))/86400000);
       function daysBack(n){const values=[];for(let i=n-1;i>=0;i--)values.push(moveDate(today(),-i));return values;}
       function summaryFor(range){const list=daysBack(range).map(d=>app.entries[d]).filter(e=>e?.status);return {registered:list.length,done:list.filter(e=>e.status==='done').length,slip:list.filter(e=>e.status==='slip').length};}
       function render(){
         document.querySelectorAll('[data-tab]').forEach(btn=>{const active=btn.dataset.tab===app.view;btn.classList.toggle('active',active);btn.setAttribute('aria-current',active?'page':'false');});
-        document.getElementById('view').innerHTML=({calendar:calendarPage,checkin:checkinPage,stats:statsPage,tools:toolsPage,settings:settingsPage}[app.view])();
+        document.getElementById('view').innerHTML=(app.view==='tools'?planHTML():'')+({calendar:calendarPage,checkin:checkinPage,stats:statsPage,tools:toolsPage,settings:settingsPage}[app.view])();
+        syncChoices();
       }
-      function goto(view){stopTimer();timerRemaining=120;app.view=view;render();window.scrollTo({top:0,behavior:'smooth'});}
+      function syncChoices(){document.querySelectorAll('.chip,.option').forEach(label=>label.classList.toggle('is-selected',!!label.querySelector('input')?.checked));}
+      function goto(view){if(app.view==='checkin'&&document.getElementById('checkin-form'))rememberDraft();stopTimer();timerRemaining=120;app.view=view;render();window.scrollTo({top:0,behavior:'smooth'});}
       function monthShift(direction){
         const newMonth = new Date(app.month.getFullYear(),app.month.getMonth()+direction,1);
         if(fmtDate(newMonth).slice(0,7)>today().slice(0,7))return;
@@ -386,24 +453,27 @@
         }
         const futureMonth = fmtDate(new Date(app.month.getFullYear(),app.month.getMonth()+1,1)).slice(0,7)>today().slice(0,7);
         return `<section class="hero"><p class="eyebrow">Um dia de cada vez</p><h1>Seu caminho é feito de pequenos passos.</h1><p>Registre como foi seu dia, reconheça seus gatilhos e acompanhe sua evolução sem julgamentos.</p><div class="hero-actions"><button type="button" class="btn btn-primary" data-action="today-checkin">+ Fazer check-in de hoje</button><button type="button" class="btn btn-secondary" data-action="open-tools">Preciso de ajuda agora</button></div></section>
-          <div class="cards" aria-label="Resumo dos últimos sete dias"><div class="stat"><div class="stat-label">Dias registrados</div><div class="stat-val">${sums.registered}</div><div class="stat-detail">Últimos 7 dias</div></div><div class="stat"><div class="stat-label">Sem consumo</div><div class="stat-val" style="color:var(--mint)">${sums.done}</div><div class="stat-detail">Dias marcados</div></div><div class="stat"><div class="stat-label">Com consumo</div><div class="stat-val" style="color:var(--coral)">${sums.slip}</div><div class="stat-detail">Dias marcados</div></div></div>
+          ${progressHTML()}<div class="cards" aria-label="Resumo dos últimos sete dias"><div class="stat"><div class="stat-label">Dias registrados</div><div class="stat-val">${sums.registered}</div><div class="stat-detail">Últimos 7 dias</div></div><div class="stat"><div class="stat-label">Sem consumo</div><div class="stat-val" style="color:var(--mint)">${sums.done}</div><div class="stat-detail">Dias marcados</div></div><div class="stat"><div class="stat-label">Com consumo</div><div class="stat-val" style="color:var(--coral)">${sums.slip}</div><div class="stat-detail">Dias marcados</div></div></div>
           <section class="panel"><div class="panel-head"><h2>Meu calendário</h2><div class="month-nav"><button class="icon-btn" data-action="prev-month" aria-label="Mês anterior">‹</button><span class="month-name">${escapeHTML(monthName(app.month))}</span><button class="icon-btn" data-action="next-month" aria-label="Próximo mês" ${futureMonth?'disabled':''}>›</button></div></div><div class="weekdays" aria-hidden="true">${['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(x=>`<div>${x}</div>`).join('')}</div><div class="calendar">${days}</div><div class="legend"><span class="legend-item"><span class="swatch done"></span>Sem pornografia</span><span class="legend-item"><span class="swatch slip"></span>Houve consumo</span><span class="legend-item"><span class="swatch partial"></span>Registro parcial</span><span class="legend-item"><span class="swatch"></span>Sem registro</span></div><p class="soft-note">Toque em qualquer dia passado ou em hoje para preencher ou editar o registro.</p></section>
           <div class="hint">Um dia difícil não apaga os anteriores. Nosso foco é perceber padrões e tornar suas escolhas mais livres.</div>`;
       }
       function checkinPage(){
         if(app.selected>today())app.selected=today();
-        const e=app.entries[app.selected]||blankEntry();
+        const e=checkinDraft?.date===app.selected?checkinDraft.entry:(app.entries[app.selected]||blankEntry());
         const statusOptions=[['done','✓ Sem pornografia'],['slip','↗ Houve consumo'],['none','Ainda não avaliei']];
-        return `<p class="date-heading">${escapeHTML(displayDate(app.selected,{weekday:'long',day:'numeric',month:'long',year:'numeric'}))}</p><h1 class="section-title">Meu check-in</h1><p class="section-sub">O importante é registrar com sinceridade, sem se punir.</p>
+        return `<p class="date-heading">${escapeHTML(displayDate(app.selected,{weekday:'long',day:'numeric',month:'long',year:'numeric'}))}</p><h1 class="section-title">Meu check-in</h1><p class="section-sub">O importante é registrar com sinceridade, sem se punir.</p><label class="checkline"><input type="checkbox" id="quick-mode" ${prefs.quickMode?'checked':''}> Modo rápido: mostrar primeiro o essencial</label>
           <section class="panel"><form id="checkin-form">
           <div class="field"><div class="field-title">Como foi em relação à pornografia?</div><p class="field-sub">Marque o que aconteceu neste dia. Os dias sem registro permanecem neutros.</p><div class="status-group">${statusOptions.map(([value,label])=>`<label class="option ${value==='slip'?'slip':''}"><input type="radio" name="status" value="${value}" ${((e.status||'none')===value)?'checked':''}><span>${label}</span></label>`).join('')}</div></div>
           <div class="field"><div class="field-head"><span class="field-title">Intensidade máxima da vontade</span><span class="range-val" id="urge-output">${e.urge==null?'—':e.urge+'/10'}</span></div><div class="range-row"><input type="range" id="urge-input" min="0" max="10" step="1" value="${e.urge??0}" ${e.urge==null?'disabled':''} aria-label="Intensidade de 0 a 10"></div><label class="checkline"><input type="checkbox" id="urge-known" ${e.urge!=null?'checked':''}> Quero registrar a intensidade (0 = nenhuma vontade)</label></div>
-          <div class="field"><div class="field-title">O que pode ter sido um gatilho?</div><p class="field-sub">Pode marcar mais de uma opção.</p><div class="chips">${triggers.map(x=>`<label class="chip"><input type="checkbox" name="triggers" value="${escapeHTML(x)}" ${e.triggers.includes(x)?'checked':''}>${escapeHTML(x)}</label>`).join('')}</div></div>
+          <div class="field"><div class="field-title">O que pode ter sido um gatilho?</div><p class="field-sub">Pode marcar mais de uma opção.</p><div class="chips">${triggerOptions(e).map(x=>`<label class="chip"><input type="checkbox" name="triggers" value="${escapeHTML(x)}" ${e.triggers.includes(x)?'checked':''}>${escapeHTML(x)}</label>`).join('')}</div><div class="new-row"><input class="new-input" id="new-trigger" type="text" maxlength="60" placeholder="Ex.: discussão, solidão, ficar acordado tarde" aria-label="Novo gatilho personalizado"><button type="button" class="btn btn-secondary" data-action="add-trigger">Adicionar gatilho</button></div><p class="field-sub">Opcional: um rótulo curto por vez. Até 20 gatilhos marcados neste dia. Evite detalhes que você não queira guardar.</p></div>
+          <details class="field feature-details" ${prefs.quickMode?'':'open'}><summary>Mais detalhes do dia (opcional)</summary>
           <div class="field"><div class="field-title">Houve estimulação automática no banheiro?</div><div class="chips" style="margin-top:10px">${[['none','Não aconteceu'],['stopped','Percebi e interrompi'],['difficult','Aconteceu e tive dificuldade'],['unreported','Não avaliei']].map(([val,label])=>`<label class="chip"><input type="radio" name="bathroom" value="${val}" ${(e.bathroom||'unreported')===val?'checked':''}>${label}</label>`).join('')}</div></div>
           <div class="field"><div class="field-head"><span class="field-title">Quanto isso afetou seu bem-estar?</span><span class="range-val" id="distress-output">${e.distress==null?'—':e.distress+'/10'}</span></div><p class="field-sub">Opcional. 0 = nenhum sofrimento; 10 = sofrimento muito intenso.</p><div class="range-row"><input type="range" id="distress-input" min="0" max="10" step="1" value="${e.distress??0}" ${e.distress==null?'disabled':''} aria-label="Sofrimento de 0 a 10"></div><label class="checkline"><input type="checkbox" id="distress-known" ${e.distress!=null?'checked':''}> Quero avaliar como me senti</label></div>
           <div class="field"><div class="field-title">Consegui interromper um impulso ou hábito automático?</div><div class="chips">${[['yes','Sim'],['no','Não consegui'],['notneeded','Não precisei'],['','Não avaliei']].map(([v,label])=>`<label class="chip"><input type="radio" name="interrupt" value="${v}" ${(e.interrupt||'')===v?'checked':''}>${label}</label>`).join('')}</div></div>
           <div class="field"><div class="field-title">As estratégias alternativas ajudaram?</div><div class="chips">${[['helped','Sim, ajudaram'],['tried','Tentei, mas foi difícil'],['nottried','Não tentei'],['','Não avaliei']].map(([v,label])=>`<label class="chip"><input type="radio" name="coping" value="${v}" ${(e.coping||'')===v?'checked':''}>${label}</label>`).join('')}</div></div>
+          <div class="field"><label class="field-title" for="strategy-used">Qual alternativa você tentou?</label><p class="field-sub">Opcional. Ex.: caminhar, conversar, tocar violão. Registre também se a tentativa não ajudou.</p><textarea name="strategy" id="strategy-used" maxlength="300" placeholder="O que você fez para responder ao impulso?">${escapeHTML(e.strategy||'')}</textarea></div>
           <div class="field"><div class="field-title">Hábitos que consegui praticar</div><p class="field-sub">Deixe desmarcado o que não fez, não tentou ou não precisou fazer.</p>${habits.map(([key,label])=>`<label class="checkline"><input type="checkbox" name="habit-${key}" ${e.habits[key]?'checked':''}>${escapeHTML(label)}</label>`).join('')}</div>
+          </details>
           <div class="field"><div class="field-title">Como me senti? (opcional)</div><p class="field-sub">Pode anotar emoções, contexto, pensamentos ou algo que aprendeu.</p><textarea name="note" maxlength="4000" placeholder="Hoje percebi que...">${escapeHTML(e.note)}</textarea></div>
           <div class="actions"><button type="submit" class="btn btn-primary">Salvar check-in</button><button type="button" class="btn btn-secondary" data-action="copy-checkin">Copiar para o Atlas</button></div><p class="save-msg" id="save-indicator">${e.updatedAt?'Último registro salvo neste aparelho.':''}</p>
           </form>${e.updatedAt?feedbackHTML(app.selected,e.status):'<div id="feedback-holder"></div>'}</section><div class="hint">Ao copiar, você pode colar o resumo na nossa conversa do ChatGPT para receber uma análise. O app não envia seus dados automaticamente.</div>`;
@@ -426,11 +496,9 @@
         const last30=daysBack(30),e30=last30.map(d=>app.entries[d]).filter(e=>e?.status),s=summaryFor(30);
         const urgeValues=last30.map(d=>app.entries[d]?.urge).filter(v=>Number.isInteger(v));
         const avg=urgeValues.length?(urgeValues.reduce((a,b)=>a+b,0)/urgeValues.length).toFixed(1).replace('.',','):'—';
-        const triggerMap=Object.fromEntries(triggers.map(t=>[t,0]));
-        for(const d of last30)for(const t of app.entries[d]?.triggers||[]) if(t in triggerMap)triggerMap[t]++;
-        const sorted=Object.entries(triggerMap).filter(([,n])=>n>0).sort((a,b)=>b[1]-a[1]);
+        const sorted=F.counts(last30.flatMap(d=>app.entries[d]?.triggers||[]));
         const max=Math.max(1,...sorted.map(([,v])=>v));
-        return `<h1 class="section-title">Sua evolução</h1><p class="section-sub">Últimos 30 dias, considerando apenas os que você registrou.</p><div class="cards"><div class="stat"><div class="stat-label">Dias registrados</div><div class="stat-val">${s.registered}</div></div><div class="stat"><div class="stat-label">Sem consumo</div><div class="stat-val" style="color:var(--mint)">${s.done}</div></div><div class="stat"><div class="stat-label">Com consumo</div><div class="stat-val" style="color:var(--coral)">${s.slip}</div></div></div>
+        return `<h1 class="section-title">Sua evolução</h1><p class="section-sub">Últimos 30 dias, considerando apenas os que você registrou.</p>${weeklyHTML()}${achievementsHTML()}<div class="cards"><div class="stat"><div class="stat-label">Dias registrados</div><div class="stat-val">${s.registered}</div></div><div class="stat"><div class="stat-label">Sem consumo</div><div class="stat-val" style="color:var(--mint)">${s.done}</div></div><div class="stat"><div class="stat-label">Com consumo</div><div class="stat-val" style="color:var(--coral)">${s.slip}</div></div></div>
         <div class="small-metrics"><div class="stat"><div class="stat-label">Intensidade média registrada</div><div class="stat-val">${avg}</div><div class="stat-detail">${urgeValues.length} avaliações</div></div><div class="stat"><div class="stat-label">Dias sem consumo dentre os registrados</div><div class="stat-val">${s.registered?Math.round(s.done/s.registered*100)+'%':'—'}</div><div class="stat-detail">Não considera dias sem registro</div></div></div>
         <section class="panel"><h2>Últimos 14 dias</h2><p class="description">Altura = vontade registrada (de 0 a 10); cor = status do dia. Ausência de dados não é contada como dia sem consumo.</p>
         <div class="timeline" role="img" aria-label="Intensidade da vontade e status nos últimos 14 dias">${daysBack(14).map(d=>{const e=app.entries[d],height=e?.urge==null?6:Math.max(6,e.urge*10+5),cls=e?.status|| (e?'partial':'');return `<div class="timeline-day" title="${escapeHTML(displayDate(d))}: ${e?.urge==null?'sem avaliação':e.urge+'/10'}"><div class="timeline-bar ${cls}" style="height:${height}px"></div><div class="timeline-label">${parseDate(d).getDate()}</div></div>`;}).join('')}</div>
@@ -441,9 +509,40 @@
         <section class="panel"><h2>Gatilhos mais frequentes</h2><p class="description">Contagem das vezes em que cada gatilho foi marcado nos últimos 30 dias.</p>${sorted.length?sorted.map(([key,num])=>`<div class="chart-row"><div class="bar-label">${escapeHTML(key)}</div><div class="bar-track"><div class="bar-fill" style="width:${(num/max*100).toFixed(1)}%"></div></div><div class="bar-value">${num}</div></div>`).join(''):'<div class="no-data">Quando você registrar seus gatilhos, eles aparecerão aqui.</div>'}</section>
         <section class="panel"><h2>O que os números mostram?</h2><p class="description">${s.registered?`Você registrou ${s.registered} dia(s) e marcou ${s.done} sem consumo. Continue observando as situações que facilitam suas escolhas.`:'Ainda não há dias com status registrados neste período. Um único check-in já é um começo.'}</p><p class="soft-note">Esses números são apenas uma ferramenta de autoconhecimento. Não são diagnóstico nem medida do seu valor pessoal.</p></section>`;
       }
+      function rememberDraft(){const entry=readForm();if(entry){entry.updatedAt=app.entries[app.selected]?.updatedAt||'';checkinDraft={date:app.selected,entry};}}
+      function progressHTML(){
+        const stats=F.progress(app.entries,today()),info=appInfo();
+        return `${secureNative&&!info.pinEnabled?'<div class="privacy-tip">Seu cofre está criptografado. Você também pode proteger a abertura do Rumo com um PIN. <button class="btn btn-ghost" data-action="security-settings">Criar meu PIN</button></div>':''}`+
+          (prefs.showCounter===false?'':`<section class="progress-card"><div class="stat-label">Seu progresso acumulado</div><div class="progress-number">${stats.done} <span style="font-size:1rem">dia(s)</span></div><p class="feature-note">Dias que você registrou sem consumo, ao longo de todo o diário. Eles continuam contando depois de um dia difícil. Dias sem registro não são somados.</p><button class="btn btn-ghost" data-action="open-stats">Ver evolução e conquistas</button></section>`);
+      }
+      function achievementsHTML(){
+        if(prefs.showAchievements===false)return '';
+        const stats=F.progress(app.entries,today());
+        const earned=F.badges.filter(b=>ledger.unlocked[b.id]);
+        const next=F.badges.filter(b=>!ledger.unlocked[b.id]).sort((a,b)=>(stats[b.metric]/b.goal)-(stats[a.metric]/a.goal))[0];
+        const featured=[...earned.slice(-1),...(next?[next]:[])];
+        const card=b=>{const date=ledger.unlocked[b.id],value=Math.min(b.goal,stats[b.metric]||0);return `<div class="badge ${date?'earned':''}"><strong>${date?'✦ ':''}${escapeHTML(b.title)}</strong><p>${escapeHTML(b.description)}</p>${date?`<p>Reconhecida em ${escapeHTML(displayDate(date))}</p>`:`<progress value="${value}" max="${b.goal}" aria-label="${escapeHTML(b.title)}: ${value} de ${b.goal}"></progress><p>${value} de ${b.goal}</p>`}</div>`;};
+        return `<section class="panel"><h2>Conquistas do seu caminho</h2><p class="description">Registros, escolhas e habilidades. Um dia difícil não retira conquistas anteriores. Você pode ocultá-las em Dados.</p><p class="feature-note">${earned.length} conquista(s) reconhecida(s). Seu esforço também aparece nas habilidades que você pratica.</p><div class="badge-grid">${featured.map(card).join('')}</div><details class="feature-details" style="margin-top:14px"><summary>Ver todas as conquistas</summary><div class="badge-grid">${F.badges.map(card).join('')}</div></details><p class="soft-note">Conquistas são reconhecidas ao atingir um marco. Edições posteriores dos registros não retiram as já reconhecidas. Não representam diagnóstico ou promessa de recuperação.</p></section>`;
+      }
+      function weeklyHTML(){
+        const w=F.weekly(app.entries,today());
+        return `<section class="panel"><h2>Seu resumo dos últimos 7 dias</h2><p class="description">${w.registered?`Você fez ${w.registered} registro(s), marcou ${w.done} dia(s) sem consumo e relatou interromper impulsos em ${w.interrupted} dia(s). Em ${w.helped} dia(s), uma alternativa ajudou.`:'Ainda não há registros nesta semana. Preencha quando isso for útil para você.'}</p>${w.triggers.length?`<p class="feature-note">Gatilhos mais citados: ${w.triggers.slice(0,3).map(([label,n])=>`${escapeHTML(label)} (${n})`).join(', ')}.</p>`:''}${w.strategies.length?`<p class="feature-note">Alternativas que você relatou como úteis: ${w.strategies.slice(0,3).map(([label,n])=>`${escapeHTML(label)} (${n})`).join('; ')}.</p>`:''}${w.rated?`<p class="feature-note">Sofrimento médio: ${(w.distress/w.rated).toFixed(1).replace('.',',')}/10, com ${w.rated} avaliação(ões).</p>`:''}<p class="soft-note">Só considera o que você registrou. Frequência de um gatilho não prova que ele causou o comportamento.</p></section>`;
+      }
+      function planHTML(){
+        return prefs.planTrigger&&prefs.planAction?`<section class="panel saved-plan"><h2>Meu plano para este momento</h2><p><strong>Quando:</strong> ${escapeHTML(prefs.planTrigger)}</p><p><strong>Eu vou:</strong> ${escapeHTML(prefs.planAction)}</p><p class="soft-note">Este é o plano que você escolheu. Adapte ao que for viável e seguro agora.</p></section>`:`<section class="panel saved-plan"><h2>Uma ação escolhida antes do impulso</h2><p class="description">Você pode salvar uma situação de risco e uma resposta prática para encontrá-las aqui.</p><button class="btn btn-secondary" data-action="open-plan">Criar meu plano</button></section>`;
+      }
+      function settingsExtras(){
+        const info=appInfo(),native=typeof window.RumoAndroid?.securitySettings==='function';
+        return `<details class="panel feature-details" open><summary>Proteção e bloqueio por PIN</summary><p class="description">${info.encryptedStorage?'Neste APK, diário, planos, gatilhos e conquistas ficam em um cofre criptografado com chave protegida pelo Android.':'Neste navegador, os registros locais ainda não têm a proteção nativa do APK Android.'}</p><p class="feature-note">PIN: ${info.pinEnabled?'ativado':'desativado'}. Biometria: ${info.biometricEnabled?'ativada':info.biometricAvailable?'disponível para ativar':'indisponível ou desativada'}.</p><div class="actions"><button class="btn btn-primary" data-action="security-settings" ${native?'':'disabled'}>${info.pinEnabled?'Gerenciar bloqueio':'Criar PIN'}</button>${info.pinEnabled?'<button class="btn btn-secondary" data-action="lock-now">Bloquear agora</button>':''}</div><p class="soft-note">O PIN deve ter de 6 a 12 números. No APK, o bloqueio volta ao sair do app. Não há recuperação do PIN pela internet: guarde um backup externo e a senha dele. Biometria é opcional, quando disponível.</p></details>
+        <details class="panel feature-details" id="plan-settings"><summary>Meu plano para momentos de risco</summary><label class="checkline" for="plan-trigger">Quando eu perceber…</label><input class="new-input" id="plan-trigger" type="text" maxlength="120" placeholder="Ex.: estar sozinho e cansado no computador" value="${escapeHTML(prefs.planTrigger||'')}"><label class="checkline" for="plan-action">Eu vou…</label><textarea id="plan-action" maxlength="300" placeholder="Ex.: levantar e caminhar por dez minutos longe das telas">${escapeHTML(prefs.planAction||'')}</textarea><button class="btn btn-primary" data-action="save-plan">Salvar meu plano</button><p class="soft-note">Seu plano aparece na Ajuda rápida. Os dois campos podem ficar vazios se você não quiser usar essa função.</p></details>
+        <details class="panel feature-details"><summary>Check-in e conquistas</summary><label class="checkline"><input type="checkbox" id="pref-quick" ${prefs.quickMode?'checked':''}> Abrir o check-in no modo rápido</label><label class="checkline"><input type="checkbox" id="pref-achievements" ${prefs.showAchievements!==false?'checked':''}> Mostrar conquistas na Evolução</label><label class="checkline"><input type="checkbox" id="pref-counter" ${prefs.showCounter!==false?'checked':''}> Mostrar contagem acumulada no calendário</label><button class="btn btn-primary" data-action="save-display">Salvar preferências</button><p class="soft-note">No modo rápido, os detalhes ficam recolhidos e continuam disponíveis. Ocultar conquistas não apaga as já reconhecidas.</p></details>
+        <details class="panel feature-details"><summary>Meus gatilhos personalizados</summary><p class="description">Rótulos curtos ajudam a identificar situações, pensamentos ou emoções. Até 30 opções pessoais; você escolhe quais marcar em cada dia.</p><div class="trigger-list">${(prefs.customTriggers||[]).map((label,i)=>`<button class="btn btn-ghost" data-action="hide-trigger" data-index="${i}" aria-label="Ocultar opção ${escapeHTML(label)}">${escapeHTML(label)} ×</button>`).join('')||'<p class="feature-note">Adicione novas opções no próprio check-in.</p>'}</div><p class="soft-note">Ocultar uma opção desta lista mantém os registros antigos e os gráficos.</p></details>
+        <details class="panel feature-details"><summary>Widget na tela inicial</summary><p class="description">Uma visão rápida do seu caminho. Tocar no widget abre o check-in, respeitando seu bloqueio por PIN.</p><label class="checkline"><input type="checkbox" id="widget-enabled" ${prefs.widgetEnabled?'checked':''} ${secureNative?'':'disabled'}> Permitir mostrar a contagem no widget</label><label class="checkline" for="widget-mode">O que o número representa?</label><select class="new-input" id="widget-mode">${[['total','Total de dias registrados sem consumo'],['registered','Total de dias com registros'],['sequence','Sequência consecutiva confirmada']].map(([v,t])=>`<option value="${v}" ${prefs.widgetMode===v?'selected':''}>${t}</option>`).join('')}</select><p class="feature-note">“Dias de progresso” é o rótulo discreto para o total sem consumo. Na sequência, lacunas de registro ficam pendentes; elas não são presumidas como sucesso nem como consumo.</p><div class="privacy-tip">A contagem do widget fica visível para quem olhar a tela inicial, mesmo com PIN no app. Ative apenas se isso fizer sentido para você.</div><div class="actions"><button class="btn btn-primary" data-action="save-widget" ${secureNative?'':'disabled'}>Salvar widget</button><button class="btn btn-secondary" data-action="add-widget" ${secureNative?'':'disabled'}>Adicionar à tela inicial</button></div><p class="soft-note">Disponível no APK Android. A tela inicial pode pedir confirmação para adicionar. Desativar a contagem faz o widget mostrar apenas um atalho neutro.</p></details>
+        <details class="panel feature-details"><summary>Enviar sugestão ou reportar problema</summary><label class="checkline" for="feedback-kind">Tipo de contato</label><select class="new-input" id="feedback-kind"><option value="suggestion">Sugestão</option><option value="bug">Problema / bug</option></select><label class="checkline" for="feedback-message">Sua mensagem</label><textarea id="feedback-message" maxlength="6000" placeholder="Para um bug: o que aconteceu, o que você esperava e como repetir o problema. Evite dados íntimos."></textarea><p class="feature-note">O app prepara um rascunho no seu aplicativo de e-mail; você revisa e envia. Somente versão do app e do sistema são acrescentadas. Seu diário não é anexado. O e-mail enviado identifica seu remetente.</p>${info.supportEmail?`<p class="feature-note">Contato: ${escapeHTML(info.supportEmail)}</p>`:'<p class="feature-note">O canal por e-mail ainda está em preparação nesta versão de testes. Você pode copiar sua mensagem.</p>'}<div class="actions"><button class="btn btn-primary" data-action="send-feedback" ${info.supportEmail?'':'disabled'}>Abrir aplicativo de e-mail</button><button class="btn btn-secondary" data-action="copy-feedback">Copiar mensagem</button></div></details>`;
+      }
       function settingsPage(){
         const total=Object.keys(app.entries).length;
-        return `<h1 class="section-title">Seus dados e sua privacidade</h1><p class="section-sub">Você controla as informações registradas aqui.</p>
+        return `<h1 class="section-title">Seus dados e sua privacidade</h1><p class="section-sub">Você controla as informações registradas aqui.</p>${settingsExtras()}
           <section class="panel"><h2>Seu tema</h2><p class="description">Escolha uma combinação agradável. O significado dos registros continua igual em todos os temas.</p>
           <div class="theme-grid">${[['oceano','Oceano','#0b1421','#78e1bb'],['violeta','Violeta','#171326','#d8b4fe'],['floresta','Floresta','#0b201c','#9af0a9'],['areia','Areia clara','#f8f5ec','#14694c']].map(([key,label,bg,accent])=>`<button class="theme-choice" type="button" data-action="choose-theme" data-theme="${key}" aria-pressed="${prefs.theme===key}"><span class="theme-preview" style="background:linear-gradient(140deg,${bg} 60%,${accent} 60%)"></span>${label}</button>`).join('')}</div>
           <p class="soft-note">Um tema não altera os seus registros.</p></section>
@@ -452,9 +551,9 @@
           ${['Primeiro horário','Segundo horário','Terceiro horário'].map((label,i)=>`<div class="pref-field"><label for="reminder-${i}">${label}</label><input id="reminder-${i}" type="time" value="${prefs.reminderTimes[i]}" ${i>=prefs.reminderCount?'disabled':''}></div>`).join('')}
           <div class="actions" style="margin-top:16px"><button class="btn btn-primary" data-action="save-reminders">Salvar lembretes</button></div>
           <p class="soft-note">No APK Android é necessário permitir notificações. No navegador, os horários são apenas preferência visual e não geram notificações em segundo plano. Você pode desativar quando quiser.</p></section>
-          <section class="panel"><h2>Armazenamento local</h2><p class="description">Os check-ins ficam neste navegador, neste aparelho. Não criamos conta, não usamos servidor e não enviamos seus dados para ninguém.</p><div class="stat" style="max-width:200px"><div class="stat-label">Registros salvos</div><div class="stat-val">${total}</div></div><p class="soft-note">Importante: limpar os dados do navegador pode apagar seus registros. Use a cópia de segurança para protegê-los.</p></section>
+          <section class="panel"><h2>Armazenamento local</h2><p class="description">${secureNative?'Os check-ins ficam no cofre criptografado deste aplicativo, neste aparelho.':'Os check-ins ficam neste navegador, neste aparelho.'} Não criamos conta e não enviamos registros automaticamente.</p><div class="stat" style="max-width:200px"><div class="stat-label">Registros salvos</div><div class="stat-val">${total}</div></div><p class="soft-note">Importante: limpar os dados do aplicativo ou navegador pode apagar seus registros. Use a cópia de segurança para protegê-los.</p></section>
           <section class="panel"><h2>Cópia de segurança</h2><p class="description">Prefira a cópia protegida por senha (AES-GCM). Uma senha esquecida não pode ser recuperada. JSON simples e CSV contêm dados íntimos legíveis — somente exporte se realmente precisar.</p><div class="actions"><button class="btn btn-primary" data-action="export-secure">Backup protegido por senha</button><button class="btn btn-secondary" data-action="import-json">Restaurar backup</button><button class="btn btn-ghost" data-action="export-json">JSON sem proteção</button><button class="btn btn-ghost" data-action="export-csv">CSV sem proteção</button></div><input id="import-input" class="file-input" type="file" accept=".json,application/json" aria-label="Importar JSON"></section>
-          <section class="panel"><h2>Proteção atual</h2><p class="description">Este app é offline, não pede acesso à internet e bloqueia capturas de tela no Android. Porém, os registros locais <strong>ainda não estão criptografados em repouso</strong>. O backup protegido por senha é criptografado, mas a proteção dos dados locais será uma etapa adicional antes de vender/publicar.</p><p class="notice">Evite aparelhos compartilhados ou modificados e não envie backups, mesmo protegidos, ao repositório GitHub. Esta versão é para testes pessoais. Os lembretes são criados no próprio aparelho, sem envio de dados a servidores.</p></section>
+          <section class="panel"><h2>Proteção atual</h2><p class="description">${secureNative?'Neste APK, os registros, preferências e conquistas são criptografados com AES-GCM e uma chave do Android Keystore. O PIN e a biometria são verificados na tela nativa antes de abrir o diário.':'Neste navegador, o bloqueio e o cofre nativos do Android não estão disponíveis; o armazenamento local não está criptografado.'}</p><p class="soft-note">O backup protegido tem sua própria senha. Guarde uma cópia fora do app antes de trocar de aparelho ou reinstalar. O cofre local não é transferido ao reinstalar. Não coloque backups pessoais no GitHub.</p></section>
           <section class="panel"><h2>Compartilhar com o Atlas</h2><p class="description">Para me enviar seus dados, abra o check-in de um dia e selecione <strong>Copiar para o Atlas</strong>. Depois, cole a mensagem no ChatGPT. Compartilhar automaticamente com esta conversa exigiria uma integração online adicional.</p><button class="btn btn-ghost" data-action="today-checkin">Abrir meu check-in</button></section>
           <section class="panel"><h2>Apagar dados deste aparelho</h2><p class="description">Isso apaga todos os check-ins deste navegador e não pode ser desfeito sem uma cópia de segurança.</p><button class="btn btn-danger" data-action="delete-all">Apagar todos os registros</button></section>
           <p class="privacy-note">Este diário não substitui acompanhamento psicológico ou médico. Se esse comportamento estiver causando sofrimento intenso ou prejuízo à sua rotina, buscar ajuda profissional faz parte do cuidado.</p>`;
@@ -462,6 +561,7 @@
       function readForm(){
         const form=document.getElementById('checkin-form');if(!form)return null;
         const data=new FormData(form);
+        if(data.getAll('triggers').length>20){toast('Escolha até 20 gatilhos neste registro.');return null;}
         return sanitizeEntry({
           status:data.get('status')==='none'?null:data.get('status'),
           urge:document.getElementById('urge-known')?.checked?Number(document.getElementById('urge-input').value):null,
@@ -471,7 +571,7 @@
           distress:document.getElementById('distress-known')?.checked?Number(document.getElementById('distress-input').value):null,
           interrupt:data.get('interrupt')||null,
           coping:data.get('coping')||null,
-          note:String(data.get('note')||''),updatedAt:new Date().toISOString()
+          strategy:String(data.get('strategy')||''),note:String(data.get('note')||''),updatedAt:new Date().toISOString()
         });
       }
       function storeCheckin(){
@@ -479,6 +579,7 @@
         const entry=readForm();if(!entry)return false;
         const previous=app.entries[app.selected];app.entries[app.selected]=entry;
         if(!save()){if(previous)app.entries[app.selected]=previous;else delete app.entries[app.selected];return false;}
+        checkinDraft=null;
         document.getElementById('save-indicator').textContent='✓ Registro salvo neste aparelho.';
         const form=document.getElementById('checkin-form');
         if(form){const current=form.parentElement?.querySelector('.feedback, #feedback-holder');if(current)current.outerHTML=feedbackHTML(app.selected,entry.status);}
@@ -495,20 +596,21 @@
           `Sofrimento: ${entry.distress==null?'Não avaliado':entry.distress+'/10'}\n`+
           `Consegui interromper impulso: ${{yes:'Sim',no:'Não',notneeded:'Não precisei'}[entry.interrupt]||'Não avaliado'}\n`+
           `Estratégias alternativas: ${{helped:'Ajudaram',tried:'Tentei, foi difícil',nottried:'Não tentei'}[entry.coping]||'Não avaliado'}\n`+
+          `Alternativa utilizada: ${entry.strategy||'Não informada'}\n`+
           `Hábitos: \n${habits.map(([key,label])=>'['+(entry.habits[key]?'x':' ')+'] '+label).join('\n')}\n`+
           `Observações: ${entry.note||'Nenhuma'}\n`+
           `Analise meu progresso nesta conversa sem me julgar e sugira um próximo passo prático.`;
       }
-      async function copyText(s){
+      async function copyText(s,successMessage='Copiado! Agora cole na nossa conversa.'){
         if(window.RumoAndroid && typeof window.RumoAndroid.copyText==='function'){
           window.RumoAndroid.copyText(s);
-          toast('Copiado! Agora cole na nossa conversa.');
+          toast(successMessage);
           return;
         }
-        try {await navigator.clipboard.writeText(s);toast('Copiado! Agora cole na nossa conversa.');}
+        try {await navigator.clipboard.writeText(s);toast(successMessage);}
         catch(e){
           const t=document.createElement('textarea');t.value=s;t.setAttribute('readonly','');t.style.position='fixed';t.style.left='-9999px';document.body.appendChild(t);t.select();
-          try {if(document.execCommand('copy'))toast('Copiado! Agora cole na nossa conversa.');else throw new Error('Falha');}
+          try {if(document.execCommand('copy'))toast(successMessage);else throw new Error('Falha');}
           catch(err){toast('Não foi possível copiar neste navegador.');}finally{t.remove();}
         }
       }
@@ -522,16 +624,17 @@
         link.href=url;link.download=filename;document.body.append(link);link.click();link.remove();
         setTimeout(()=>URL.revokeObjectURL(url),1000);
       }
-      function exportJSON(){if(!confirm('Backup sem criptografia: seus registros poderão ser lidos por quem tiver este arquivo. Deseja continuar?'))return;const payload={app:'Rumo',version:2,exportedAt:new Date().toISOString(),entries:app.entries};downloadBlob('rumo-backup-'+today()+'.json',new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'}));toast(window.RumoAndroid?'Escolha onde salvar o backup.':'Cópia de segurança criada.');}
+      function backupPayload(){return {app:'Rumo',version:3,exportedAt:new Date().toISOString(),entries:app.entries,preferences:{...prefs},achievements:ledger};}
+      function exportJSON(){if(!confirm('Backup sem criptografia: seus registros poderão ser lidos por quem tiver este arquivo. Deseja continuar?'))return;const payload=backupPayload();downloadBlob('rumo-backup-'+today()+'.json',new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'}));toast(window.RumoAndroid?'Escolha onde salvar o backup.':'Cópia de segurança criada.');}
       function exportCSV(){
         if(!confirm('O CSV contém informações íntimas sem criptografia. Deseja continuar?'))return;
-        const headers=['Data','Status','Vontade máxima','Gatilhos','Banheiro','Sofrimento','Interrompi impulso','Estratégias',...habits.map(([,label])=>label),'Observações'];
-        const rows=Object.entries(app.entries).sort(([a],[b])=>a.localeCompare(b)).map(([date,e])=>[date,e.status==='done'?'Sem consumo':e.status==='slip'?'Houve consumo':'Não avaliado',e.urge??'',e.triggers.join('; '),e.bathroom||'',e.distress??'',e.interrupt||'',e.coping||'',...habits.map(([key])=>e.habits[key]?'Sim':'Não'),e.note]);
-        const q=x=>'"'+String(x??'').replace(/"/g,'""')+'"';
+        const headers=['Data','Status','Vontade máxima','Gatilhos','Banheiro','Sofrimento','Interrompi impulso','Estratégias','Alternativa utilizada',...habits.map(([,label])=>label),'Observações'];
+        const rows=Object.entries(app.entries).sort(([a],[b])=>a.localeCompare(b)).map(([date,e])=>[date,e.status==='done'?'Sem consumo':e.status==='slip'?'Houve consumo':'Não avaliado',e.urge??'',e.triggers.join('; '),e.bathroom||'',e.distress??'',e.interrupt||'',e.coping||'',e.strategy||'',...habits.map(([key])=>e.habits[key]?'Sim':'Não'),e.note]);
+        const q=x=>{let v=String(x??'');if(/^[=+@\-\t\r]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"';};
         const csv='\ufeff'+[headers,...rows].map(row=>row.map(q).join(',')).join('\r\n');
         downloadBlob('rumo-registros-'+today()+'.csv',new Blob([csv],{type:'text/csv;charset=utf-8'}));toast(window.RumoAndroid?'Escolha onde salvar o CSV.':'CSV exportado.');
       }
-      const bytesTo64=bytes=>btoa(String.fromCharCode(...bytes));
+      const bytesTo64=bytes=>{let text='';for(let i=0;i<bytes.length;i+=32768)text+=String.fromCharCode(...bytes.subarray(i,i+32768));return btoa(text);};
       const from64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
       async function keyFromPassword(password,salt){
         const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveKey']);
@@ -548,7 +651,7 @@
           const salt=crypto.getRandomValues(new Uint8Array(16));
           const iv=crypto.getRandomValues(new Uint8Array(12));
           const key=await keyFromPassword(password,salt);
-          const payload={app:'Rumo',version:2,exportedAt:new Date().toISOString(),entries:app.entries};
+          const payload=backupPayload();
           const cipher=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(JSON.stringify(payload))));
           const safe={app:'Rumo',version:2,encrypted:true,kdf:'PBKDF2-SHA256',iterations:250000,algorithm:'AES-256-GCM',salt:bytesTo64(salt),iv:bytesTo64(iv),ciphertext:bytesTo64(cipher)};
           downloadBlob('rumo-backup-protegido-'+today()+'.json',new Blob([JSON.stringify(safe)],{type:'application/json;charset=utf-8'}));
@@ -568,15 +671,27 @@
       async function importJSON(file){
         if(!file)return;
         try {
-          if(file.size>4000000)throw new Error('Arquivo grande demais');
+          if(file.size>12000000)throw new Error('Arquivo grande demais');
           let raw=JSON.parse(await file.text());
           if(raw?.encrypted===true)raw=await decryptBackup(raw);
-          if(raw?.app!=='Rumo'||![1,2].includes(raw?.version)||!raw.entries||typeof raw.entries!=='object'||Array.isArray(raw.entries))throw new Error('Formato inválido');
+          if(raw?.app!=='Rumo'||![1,2,3].includes(raw?.version)||!raw.entries||typeof raw.entries!=='object'||Array.isArray(raw.entries))throw new Error('Formato inválido');
           const clean={};for(const [date,e]of Object.entries(raw.entries)){if(!isISO(date)||date>today()||!e||typeof e!=='object')continue;clean[date]=sanitizeEntry(e);}
           const count=Object.keys(clean).length;
-          if(!confirm(`Importar ${count} registro(s)? Dias que já existem neste aparelho serão substituídos pelos da cópia. Os demais serão preservados.`))return;
-          const previous=app.entries;app.entries={...app.entries,...clean};
-          if(!save()){app.entries=previous;return;}
+          const hasPrefs=raw.version===3&&raw.preferences&&typeof raw.preferences==='object'&&!Array.isArray(raw.preferences);
+          if(!confirm(`Importar ${count} registro(s)${hasPrefs?' e preferências':''}? Dias já existentes serão substituídos pelos da cópia. Os demais serão preservados. PIN e biometria não são alterados. Ao restaurar preferências, lembretes e contagem do widget ficam desligados até você ativá-los novamente.`))return;
+          const entries={...app.entries,...clean};
+          let nextPrefs={...prefs};
+          if(hasPrefs){const p=raw.preferences;nextPrefs={...nextPrefs,
+            theme:themes.includes(p.theme)?p.theme:nextPrefs.theme,customTriggers:F.labels(p.customTriggers,30),
+            planTrigger:F.text(p.planTrigger,120),planAction:F.text(p.planAction,300),quickMode:p.quickMode===true,
+            showAchievements:p.showAchievements!==false,showCounter:p.showCounter!==false,
+            widgetMode:['total','registered','sequence'].includes(p.widgetMode)?p.widgetMode:'total',widgetEnabled:false,reminderCount:0,
+            reminderTimes:defaults.reminderTimes.map((d,i)=>safeTime(p.reminderTimes?.[i],d))};}
+          const incoming=F.cleanLedger(raw.achievements,today());
+          const nextLedger=F.award({version:1,unlocked:{...incoming.unlocked,...ledger.unlocked}},F.progress(entries,today()),today());
+          persistBundle({[STORAGE_KEY]:JSON.stringify(entries),[PREFS_KEY]:JSON.stringify(nextPrefs),[LEDGER_KEY]:JSON.stringify(nextLedger)});
+          app.entries=entries;prefs=nextPrefs;ledger=nextLedger;checkinDraft=null;applyTheme();updateProgress();
+          if(hasPrefs&&typeof window.RumoAndroid?.configureReminders==='function')window.RumoAndroid.configureReminders(0,prefs.reminderTimes.join(','));
           render();toast(`${count} registro(s) importado(s).`);
         }catch(e){toast('Não foi possível importar. Verifique a cópia JSON do Rumo.');}
       }
@@ -584,6 +699,8 @@
       document.addEventListener('input',e=>{if(e.target.id==='urge-input')document.getElementById('urge-output').textContent=e.target.value+'/10';
         if(e.target.id==='distress-input')document.getElementById('distress-output').textContent=e.target.value+'/10';});
       document.addEventListener('change',e=>{
+        syncChoices();
+        if(e.target.id==='quick-mode'){rememberDraft();if(setPrefs({quickMode:e.target.checked}))render();return;}
         if(e.target.id==='urge-known'){
           const range=document.getElementById('urge-input');range.disabled=!e.target.checked;
           document.getElementById('urge-output').textContent=e.target.checked?range.value+'/10':'—';
@@ -604,6 +721,56 @@
         switch(el.dataset.action){
           case 'today-checkin':app.selected=today();goto('checkin');break;
           case 'open-tools':goto('tools');break;
+          case 'open-stats':goto('stats');break;
+          case 'security-settings':if(typeof window.RumoAndroid?.securitySettings==='function')window.RumoAndroid.securitySettings();break;
+          case 'lock-now':if(typeof window.RumoAndroid?.lockNow==='function')window.RumoAndroid.lockNow();break;
+          case 'open-plan':goto('settings');{const panel=document.getElementById('plan-settings');if(panel){panel.open=true;panel.scrollIntoView({behavior:'smooth'});}}break;
+          case 'save-plan':{
+            const trigger=F.text(document.getElementById('plan-trigger')?.value,120),action=F.text(document.getElementById('plan-action')?.value,300);
+            if(!!trigger!==!!action){toast('Preencha a situação e a ação, ou deixe os dois campos vazios.');break;}
+            if(setPrefs({planTrigger:trigger,planAction:action}))toast('Plano salvo na Ajuda rápida.');break;
+          }
+          case 'save-display':{
+            if(setPrefs({quickMode:document.getElementById('pref-quick')?.checked===true,
+              showAchievements:document.getElementById('pref-achievements')?.checked===true,
+              showCounter:document.getElementById('pref-counter')?.checked===true}))toast('Preferências salvas.');break;
+          }
+          case 'add-trigger':{
+            const label=F.text(document.getElementById('new-trigger')?.value);if(!label){toast('Escreva um rótulo curto para o gatilho.');break;}
+            const entry=readForm();if(!entry)break;
+            const existing=triggerOptions(entry).find(value=>value.toLocaleLowerCase('pt-BR')===label.toLocaleLowerCase('pt-BR'));
+            const selected=existing||label;
+            if(entry.triggers.length>=20&&!entry.triggers.includes(selected)){toast('Escolha até 20 gatilhos para este dia.');break;}
+            if(!existing){
+              if((prefs.customTriggers||[]).length>=30){toast('Você já tem 30 opções pessoais. Oculte alguma em Dados para adicionar outra.');break;}
+              if(!setPrefs({customTriggers:F.labels([...(prefs.customTriggers||[]),label],30)}))break;
+            }
+            entry.triggers=F.labels([...entry.triggers,selected],20);entry.updatedAt=app.entries[app.selected]?.updatedAt||'';
+            checkinDraft={date:app.selected,entry};render();toast('Gatilho selecionado. Salve o check-in para registrar este dia.');break;
+          }
+          case 'hide-trigger':{
+            const index=Number(el.dataset.index);if(!Number.isInteger(index)||index<0||index>=(prefs.customTriggers||[]).length)break;
+            if(confirm('Ocultar essa opção da lista? Os registros antigos e os gráficos serão preservados.')){
+              if(setPrefs({customTriggers:prefs.customTriggers.filter((_,i)=>i!==index)}))render();
+            }break;
+          }
+          case 'save-widget':{
+            if(setPrefs({widgetEnabled:document.getElementById('widget-enabled')?.checked===true,
+              widgetMode:document.getElementById('widget-mode')?.value||'total'})){
+              toast(updateProgress()?'Widget atualizado.':'Falha ao atualizar o widget. Remova-o da tela inicial até tentar novamente.');
+            }break;
+          }
+          case 'add-widget':if(typeof window.RumoAndroid?.addWidget==='function')window.RumoAndroid.addWidget();break;
+          case 'send-feedback':
+          case 'copy-feedback':{
+            const message=F.text(document.getElementById('feedback-message')?.value,6000),kind=document.getElementById('feedback-kind')?.value||'suggestion';
+            if(!message){toast('Escreva sua mensagem primeiro.');break;}
+            const info=appInfo();
+            if(el.dataset.action==='copy-feedback'){copyText(F.mailText(kind,message,info),'Mensagem copiada. Cole no seu aplicativo de e-mail.');break;}
+            if(typeof window.RumoAndroid?.composeFeedback==='function')window.RumoAndroid.composeFeedback(kind,message);
+            else if(info.supportEmail)window.location.href='mailto:'+encodeURIComponent(info.supportEmail)+'?subject='+encodeURIComponent('Rumo — '+(kind==='bug'?'Problema':'Sugestão'))+'&body='+encodeURIComponent(F.mailText(kind,message,info));
+            break;
+          }
           case 'timer-start':{ if(timerHandle!==null)return;const btn=el;btn.disabled=true; timerHandle=setInterval(()=>{timerRemaining=Math.max(0,timerRemaining-1);const display=document.getElementById('tool-timer');if(display)display.textContent=String(Math.floor(timerRemaining/60)).padStart(2,'0')+':'+String(timerRemaining%60).padStart(2,'0');if(timerRemaining===0){stopTimer();toast('Dois minutos concluídos. Como está a vontade agora?');}},1000);break;}
           case 'timer-reset':stopTimer();timerRemaining=120;const t=document.getElementById('tool-timer');if(t)t.textContent='02:00';document.querySelector('[data-action=timer-start]').disabled=false;break;
           case 'prev-month':monthShift(-1);break;
@@ -614,7 +781,7 @@
           }
           case 'choose-theme':{
             if(!themes.includes(el.dataset.theme))break;
-            prefs.theme=el.dataset.theme;savePrefs();applyTheme();render();break;
+            if(setPrefs({theme:el.dataset.theme})){applyTheme();render();}break;
           }
           case 'save-reminders':{
             const count=Number(document.getElementById('reminder-count')?.value||0);
@@ -622,7 +789,7 @@
             if(!Number.isInteger(count)||count<0||count>3){toast('Escolha de 0 a 3 lembretes.');break;}
             const active=times.slice(0,count);
             if(new Set(active).size!==active.length){toast('Use horários diferentes.');break;}
-            prefs.reminderCount=count;prefs.reminderTimes=times;savePrefs();
+            if(!setPrefs({reminderCount:count,reminderTimes:times}))break;
             if(window.RumoAndroid&&typeof window.RumoAndroid.configureReminders==='function'){
               window.RumoAndroid.configureReminders(count,times.join(','));
               toast(count?'Solicitando autorização para lembretes…':'Desativando lembretes…');
@@ -633,11 +800,20 @@
           case 'export-json':exportJSON();break;
           case 'export-csv':exportCSV();break;
           case 'import-json':document.getElementById('import-input')?.click();break;
-          case 'delete-all':if(confirm('Tem certeza que quer apagar TODOS os registros deste aparelho? Faça um backup antes.'))if(confirm('Última confirmação: apagar definitivamente todos os registros?')){const before=app.entries;app.entries={};if(save()){render();toast('Os registros deste navegador foram apagados.');}else app.entries=before;}break;
+          case 'delete-all':if(confirm('Apagar todos os check-ins e conquistas? Exporte um backup antes. PIN, plano e preferências serão mantidos.'))if(confirm('Última confirmação: apagar definitivamente os check-ins e conquistas?')){
+            try{persistBundle({[STORAGE_KEY]:'{}',[LEDGER_KEY]:JSON.stringify({version:1,unlocked:{}})});app.entries={};ledger={version:1,unlocked:{}};checkinDraft=null;updateProgress();render();toast('Check-ins e conquistas apagados.');}
+            catch(error){toast('Não foi possível apagar. Os dados anteriores foram preservados.');}
+          }break;
         }
       });
+      updateProgress();
       render();
       if(!window.RumoAndroid && 'serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+      }catch(error){
+        window.__rumoBootError=String(error?.message||error);
+        const view=document.getElementById('view');
+        if(view)view.innerHTML='<section class="panel"><h1>Seus dados foram preservados</h1><p>Não foi possível abrir o diário com segurança. Feche e abra o aplicativo. Se continuar, preserve seu backup externo e procure suporte antes de limpar dados ou reinstalar.</p></section>';
+      }
     })();
   </script>
 </body>

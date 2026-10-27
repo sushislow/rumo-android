@@ -1,52 +1,61 @@
-# Rumo — Diário de Progresso | Versão beta 1.2.0
+# Rumo — Diário de Progresso | Beta 1.3.0
 
-Aplicativo Android offline e local para acompanhar hábitos ligados ao uso problemático de pornografia. Gratuito durante o período de testes; **não é ferramenta terapêutica validada**.
+Aplicativo Android pessoal e offline para registrar hábitos, gatilhos, escolhas e bem-estar. Não é tratamento nem instrumento diagnóstico.
 
-## Novidades da versão 1.2
+## Atualização e uso
 
-- **Lembretes locais opcionais**, de zero a três vezes por dia. Ativados apenas por decisão do usuário e permissão do Android; horários aproximados pelo WorkManager, que continua mesmo após reinício.
-- **Quatro temas**: Oceano, Violeta, Floresta e Areia clara. A escolha fica salva neste aparelho.
-- **Mensagens após check-in**: reconhecimento de dias sem consumo; apoio e sugestões concretas para dias com consumo; mensagens neutras para registros parciais. Não são enviadas como notificações.
-- **Privacidade das notificações**: títulos e textos neutros, conteúdo oculto na tela de bloqueio (`VISIBILITY_SECRET`). Não lê as observações do diário para gerar lembretes.
-- **Calendário com sinais de status**, além das cores.
+Leia **GUIA_ATUALIZACAO_1_3.md** para comandos do Codespaces, backup, configuração do e-mail, PIN e widget. O pacote contém a logo aprovada na versão 1.2.1.
 
 ## Nesta versão
 
-- Calendário: dias sem consumo / com consumo / não registrados (distinção crucial).
-- Check-in: vontade, gatilhos, hábitos, banheiro, sofrimento opcional (0–10), interrupção de impulso e estratégias alternativas.
-- Evolução: 7 e 30 dias; gráfico simples dos últimos 14 dias; frequência dos gatilhos, uso de estratégias e sofrimento médio apenas de dias registrados.
-- Ajuda rápida: afastar gatilhos, observação guiada do impulso durante dois minutos, questionar justificativas automáticas e plano após deslizes.
-- Backup JSON criptografado AES-256-GCM com senha de 10+ caracteres via PBKDF2-SHA256 (250 mil iterações). Importa backup v1/v2 e protegido v2.
-- Exportações JSON/CSV legíveis apenas após aviso explícito.
-- WebView local via WebViewAssetLoader, **sem permissão INTERNET**, capturas de tela bloqueadas no Android.
+- Cofre local AES-GCM com chave não exportável do Android Keystore.
+- PIN nativo de 6 a 12 números, espera após tentativas incorretas e bloqueio ao sair do app.
+- Biometria forte opcional, quando disponível no aparelho.
+- Migração confirmada do armazenamento anterior e restauração de backups v1/v2.
+- Gatilhos personalizados, presentes no histórico, gráficos, resumo e backup.
+- Check-in rápido opcional e campo para registrar a alternativa tentada.
+- Plano pessoal de situação → ação na Ajuda rápida.
+- Conquistas cumulativas permanentes, sem ranking, e opção de ocultá-las.
+- Resumo semanal de registros, habilidades, gatilhos e alternativas úteis relatadas.
+- Widget Android opcional, discreto e sem diário/notas; contagem oculta por padrão.
+- Feedback por aplicativo de e-mail, com revisão antes do envio e alternativa de copiar.
+- Quatro temas, lembretes opcionais e backup protegido por senha continuam disponíveis.
 
-## Limitações explícitas
+## Endereço de suporte pendente
 
-- O backup protegido é criptografado; **os dados locais no `localStorage` ainda não são criptografados em repouso**. Não vender/publicar como produto sensível seguro até revisar e implementar armazenamento criptografado e auditoria.
-- Usuários que esquecem a senha do backup protegido não podem restaurá-lo.
-- Não há sincronização, conta, envio ao ChatGPT, analytics ou anúncios.
-- Sem diagnóstico, taxa de sucesso ou promessa de cura.
-- As orientações de apoio não substituem profissional de saúde.
-- O app usa WebView e requer testes reais em dispositivos Android.
+`app/src/main/res/values/rumo_support.xml` contém `support_email` vazio até o responsável informar o destinatário real. Enquanto isso, o app oferece copiar a mensagem. Nenhum endereço inventado ou senha é incluído.
 
-## Atualizar projeto no mesmo repositório do Rumo
+## Compilação
 
-1. **Antes de qualquer atualização do APK:** abrir Rumo → Dados → **Backup protegido por senha** se já tiver v1.1, ou `Exportar cópia JSON` se tiver v1.0. Confirme que o arquivo foi salvo fora do app; não compartilhe com outras pessoas.
-2. Extraia os arquivos deste ZIP na raiz do **mesmo repositório Rumo**, substituindo somente os arquivos do Rumo. Não envie o ZIP fechado como único arquivo. Preserve `.git` e `.github`.
-3. Codespaces: `unzip -o Rumo_Beta_Android_v1_2.zip && git add . && git commit -m "Atualizar Rumo beta 1.2" && git push`.
-4. Em Actions → **Gerar APK do Rumo**, baixe o artifact Rumo-APK, extraia `app-debug.apk`.
-5. Se a versão debug tiver assinatura diferente, ela não instalará sobre a antiga. **Não desinstale sem backup.** Para atualizações duráveis, configure assinatura fixa em `GUIA_ASSINATURA_E_PUBLICACAO.md`.
-6. Não commite arquivos de backup (mesmo criptografados) nem keystores no GitHub.
+Java 17, Gradle 8.9, compileSdk 35, Build Tools 35.0.0, minSdk 24, targetSdk 34. `versionCode` 5; `versionName` 1.3.0.
 
-### Arquivos centrais
+O workflow **Gerar APK do Rumo** executa os testes básicos e produz **Rumo-APK**. O workflow de release usa os segredos da chave de assinatura existente. Não coloque keystore, senhas ou backups pessoais no GitHub.
 
-- `app/src/main/assets/index.html`: UI, dados, gráficos, backup, exercícios.
-- `app/src/main/java/br/com/rumo/diario/MainActivity.java`: WebView offline, ponte de exportação, proteções Android.
-- `.github/workflows/gerar-apk.yml`: APK debug experimental.
-- `.github/workflows/gerar-apk-release.yml`: APK release com assinatura fixa, **exige configurar secrets**.
+## Verificação
 
-## Checklist do que testar
+```bash
+node tests/rumo-smoke.js
+node tests/rumo-features.js
+mkdir -p build/crypto-tests
+javac -d build/crypto-tests app/src/main/java/br/com/rumo/diario/VaultCrypto.java tests/VaultCryptoTest.java
+java -cp build/crypto-tests br.com.rumo.diario.VaultCryptoTest
+gradle :app:assembleDebug :app:lintDebug
+```
 
-Veja `PLANO_TESTES_E_QUESTIONARIO.md`. Teste importação v1, atualização sem perda de dados, datas, gráficos, backup protegido e restore antes de convidar voluntários.
+`tests/ui-smoke.js` é opcional, exige Playwright/Chromium e verifica a interface com uma ponte nativa simulada. Não simula a segurança do Android Keystore ou sensores biométricos. Para usá-lo, instale Playwright no ambiente de testes; `RUMO_CHROMIUM` pode indicar um executável já instalado.
 
-Veja `GUIA_ATUALIZACAO_1_2.md` para procedimentos e testes de notificações, permissões e temas.
+Os testes instrumentados em `app/src/androidTest` verificam o cofre, migração, integridade e PIN no Android. Usam um diretório separado dos registros reais. Para executá-los em um emulador/dispositivo de testes:
+
+```bash
+gradle :app:connectedDebugAndroidTest
+```
+
+Biometria, retorno após segundo plano e posicionamento do widget precisam também de conferência no aparelho/launcher usado. Não confunda o sucesso de uma compilação com uma auditoria de segurança ou validação clínica.
+
+## Privacidade
+
+Sem permissão INTERNET, publicidade, contas, analytics ou servidor próprio. Abertura de e-mail e exportação de arquivos são ações explícitas da pessoa e podem usar outros aplicativos. O widget usa somente agregados autorizados, visíveis na tela inicial. JSON/CSV sem proteção e texto copiado são legíveis.
+
+A criptografia local não recupera um PIN esquecido e não protege um Android comprometido. Backups externos protegidos continuam necessários antes de reinstalar ou trocar de aparelho. Consulte PRIVACIDADE_RASCUNHO.md e as referências em REFERENCIAS_1_3.md.
+
+Os resultados e limites dos testes desta preparação estão em **VALIDACAO_v1_3.md**.

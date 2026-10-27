@@ -6,3 +6,5 @@
 *.jks
 *.keystore
 .DS_Store
+Rumo_*.zip
+node_modules/

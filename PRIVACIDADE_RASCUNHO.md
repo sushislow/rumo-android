@@ -1,37 +1,31 @@
-# Rumo — Rascunho de aviso de privacidade (versão beta 1.1)
+# Rumo — aviso de privacidade para a versão beta 1.3
 
-**NÃO PUBLICAR SEM REVISÃO JURÍDICA E TÉCNICA E IDENTIFICAÇÃO DO RESPONSÁVEL PELO APLICATIVO.** Adaptar endereço de contato, titularidade do aplicativo, política de menores e exigências da plataforma.
+Rascunho para testes pessoais com adultos. Deve ser revisto antes de disponibilização comercial ampla.
 
-## Dados tratados
+## Registros no APK
 
-O Rumo permite que usuários registrem datas, hábitos, consumo de pornografia, gatilhos, intensidade de impulsos, sofrimento subjetivo e notas livres. Esses dados podem envolver **vida sexual e saúde**, categorias sensíveis pela LGPD quando vinculadas a pessoa natural.
+Diário, preferências (incluindo plano e gatilhos personalizados) e conquistas são guardados no diretório interno sem backup automático do app, em arquivo criptografado com AES-GCM. A chave pertence ao Android Keystore e não é exportada ao JavaScript. A criptografia é usada mesmo com o PIN desativado. As chaves legadas do armazenamento web são removidas logicamente após a migração ser confirmada; não há promessa de apagamento forense de cópias antigas.
 
-## Onde ficam e quando saem do aparelho
+PIN e biometria são um bloqueio nativo da interface. O PIN é verificado com derivação PBKDF2, sal aleatório e comparação em tempo constante; o verificador e a espera após tentativas também ficam no cofre. O PIN não é armazenado em texto claro nem enviado a um servidor. Biometria usa a confirmação do Android; o Rumo não recebe a impressão digital ou o rosto. O bloqueio volta quando o app sai de primeiro plano. As capturas do app são bloqueadas pelo Android, dentro das limitações da plataforma.
 
-Na versão Android beta, os check-ins são salvos em armazenamento local do WebView. O aplicativo não tem permissão de internet, contas de usuário, publicidade, analytics ou transmissão automática. Registros podem ser exportados **apenas por ação da pessoa usuária**. A função "Copiar para o Atlas" coloca o resumo no clipboard: ao colar em um chat, passam a valer também as práticas do serviço de destino.
+A proteção depende da integridade do aparelho e do Android. Um sistema comprometido, acesso de depuração autorizado ou processos comprometidos têm riscos que esse bloqueio não elimina. A chave local é perdida ao limpar os dados ou desinstalar.
 
-## Proteções e limites
+## Widget
 
-- Tela bloqueada para screenshots e prévias no Android.
-- Backup opcional criptografado com senha por AES-GCM e PBKDF2.
-- Exportação sem criptografia possível com aviso.
-- **Os dados locais ainda NÃO são criptografados em repouso.** Um dispositivo comprometido pode expô-los.
-- A senha do backup criptografado é escolhida pelo usuário e não é recuperável pelo desenvolvedor.
-- Limpar dados ou desinstalar pode apagar registros; backups são responsabilidade de quem os exporta.
+A contagem está oculta por padrão. Ativar o widget com contagem permite guardar um pequeno resumo separado: métrica, quantidade, data de atualização e indicação de pendência. Esse resumo não contém notas, gatilhos, PIN ou diário completo. O número pode ser visto por quem olhar a tela inicial, independentemente do PIN do Rumo. Ao desativar, o resumo numérico é removido e o widget se torna um atalho neutro.
 
-## Exclusão e direitos
+## Compartilhamento e contato
 
-A tela Dados permite apagar os registros do dispositivo. Arquivos exportados ficam sob controle de quem os salvou. Desinstalar o aplicativo apaga dados locais no Android; arquivos de backup externos não são apagados automaticamente.
+O app não tem permissão INTERNET, conta, publicidade, telemetria ou servidor próprio. Textos copiados e arquivos exportados só são compartilhados por ação explícita da pessoa. O backup protegido por senha é criptografado; JSON simples, CSV e textos copiados são legíveis. O PIN, dados biométricos e a chave local não são exportados.
 
-## Terceiros e futuras versões
+O contato de sugestão/bug abre o aplicativo de e-mail da pessoa com mensagem, versão do Rumo e versão do Android. O diário não é anexado automaticamente. A pessoa revisa e confirma o envio no cliente de e-mail, que tem suas próprias regras de privacidade e mostra o remetente ao destinatário. Evite escrever detalhes íntimos no relato de um bug. O destinatário real ainda precisa ser configurado em rumo_support.xml; enquanto estiver vazio, o app só permite copiar a mensagem.
 
-Não coletamos telemetria nem enviamos dados a terceiros na versão beta. Uma futura funcionalidade online ou pagamentos pode mudar esse tratamento e exigirá nova avaliação, informações transparentes e bases legais apropriadas. Não pressupor consentimento amplo a partir da instalação.
+## Backup, restauração e exclusão
 
-## Contato e revisão
+Não existe recuperação remota de PIN ou senha de backup. Guarde uma cópia protegida fora do app antes de atualizar, reinstalar ou trocar de celular. Backups antigos v1/v2 podem ser importados; o novo conteúdo v3 inclui preferências, plano, gatilhos e conquistas. Ao restaurar preferências, lembretes e contagem do widget permanecem desligados até reativação. A restauração não altera o PIN nativo.
 
-[Incluir nome/empresa responsável, e-mail de privacidade, data de vigência, dados de contato e procedimentos para solicitações antes de publicar.]
+Apagar os check-ins e conquistas pelo menu exige duas confirmações e mantém PIN, plano e preferências, como informado no diálogo. Limpar dados no Android ou desinstalar apaga também o cofre e as chaves locais. Cópias exportadas e e-mails já enviados permanecem fora do controle do Rumo e precisam ser administrados pela pessoa.
 
+## Finalidade
 
-## Acréscimo beta 1.2 (rascunho)
-
-Se o usuário habilitar lembretes, o Rumo armazena localmente no Android a quantidade (0 a 3) e os horários selecionados, apenas para agendar notificações. Não lê dados do diário para compor notificações. Textos neutros, sem referências íntimas; o conteúdo é ocultado na tela de bloqueio. A pessoa pode desativar os lembretes no aplicativo ou nas configurações do Android. O sistema pode atrasar os disparos por economia de bateria. A preferência de tema é guardada localmente. Não há transmissão desses dados, já que o APK não requer permissão de internet. Este texto deve passar por revisão legal antes de publicação pública.
+Autoconhecimento e apoio a escolhas pessoais. Nenhum diagnóstico, promessa de cura ou substituição de cuidado profissional. Conquistas e contadores são opcionais. Dias sem registro permanecem desconhecidos; pensamentos e desejo sexual não são tratados como recaída.

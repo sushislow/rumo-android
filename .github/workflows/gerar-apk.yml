@@ -28,7 +28,12 @@ jobs:
         with:
           gradle-version: '8.9'
       - name: Testar lógica do diário
-        run: node tests/rumo-smoke.js
+        run: |
+          node tests/rumo-smoke.js
+          node tests/rumo-features.js
+          mkdir -p "$RUNNER_TEMP/rumo-crypto-tests"
+          javac -d "$RUNNER_TEMP/rumo-crypto-tests" app/src/main/java/br/com/rumo/diario/VaultCrypto.java tests/VaultCryptoTest.java
+          java -cp "$RUNNER_TEMP/rumo-crypto-tests" br.com.rumo.diario.VaultCryptoTest
       - name: Gerar APK de testes
         run: gradle :app:assembleDebug --no-daemon --stacktrace
       - name: Disponibilizar APK

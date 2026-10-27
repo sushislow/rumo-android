@@ -1,7 +1,7 @@
 package br.com.rumo.diario;
 
 import android.Manifest;
-import android.app.Activity;
+import androidx.fragment.app.FragmentActivity;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.content.ClipData;
@@ -19,6 +19,8 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.Toast;
+import android.widget.FrameLayout;
+import android.widget.TextView;
 import android.view.WindowManager;
 
 import androidx.webkit.WebViewAssetLoader;
@@ -27,12 +29,18 @@ import androidx.webkit.WebViewClientCompat;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
-public class MainActivity extends Activity {
+public class MainActivity extends FragmentActivity {
     private static final int CREATE_DOCUMENT = 1001;
     private static final int OPEN_DOCUMENT = 1002;
     private static final int NOTIFICATION_PERMISSION_REQUEST = 1003;
     private static final String APP_URL = "https://appassets.androidplatform.net/assets/index.html";
     private WebView webView;
+    private RumoVault vault;
+    private RumoLockController lockController;
+    private boolean pageStarted;
+    private Uri queuedImport;
+    private Boolean queuedNotificationEnabled;
+    private String queuedNotificationMessage;
     private ValueCallback<Uri[]> importFileCallback;
     private PendingExport pendingExport;
     private int pendingReminderCount = 0;
@@ -54,11 +62,25 @@ public class MainActivity extends Activity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
         getWindow().setStatusBarColor(Color.rgb(11, 20, 33));
         getWindow().setNavigationBarColor(Color.rgb(16, 30, 44));
+        try { vault = RumoVault.getInstance(this); }
+        catch (Exception error) {
+            TextView failure = new TextView(this);
+            failure.setText("Não foi possível abrir o cofre do Rumo. Os dados não foram apagados. Preserve seu backup externo e procure suporte antes de limpar os dados ou reinstalar.");
+            failure.setTextColor(Color.WHITE); failure.setBackgroundColor(Color.rgb(11, 20, 33));
+            failure.setPadding(32, 60, 32, 32); setContentView(failure); return;
+        }
         webView = new WebView(this);
+        webView.setSaveEnabled(false);
+        if (Build.VERSION.SDK_INT >= 26) webView.setImportantForAutofill(android.view.View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS);
         webView.setBackgroundColor(Color.rgb(11, 20, 33));
-        setContentView(webView);
+        FrameLayout container = new FrameLayout(this);
+        container.addView(webView, new FrameLayout.LayoutParams(-1, -1)); setContentView(container);
+        lockController = new RumoLockController(this, vault, container, this::showUnlockedApp,
+                () -> webView.evaluateJavascript("window.RumoNativeSettingsChanged && window.RumoNativeSettingsChanged()", null));
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
+        settings.setSaveFormData(false);
+        android.webkit.WebViewDatabase.getInstance(this).clearFormData();
         settings.setDomStorageEnabled(true);
         settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(true); // Only imported content:// files from system picker; needed for JSON backup import.
@@ -114,6 +136,7 @@ public class MainActivity extends Activity {
         webView.addJavascriptInterface(new Object() {
             @JavascriptInterface
             public void copyText(String value) {
+                if (!lockController.isUnlocked() || value == null || value.length() > 100000) return;
                 runOnUiThread(() -> {
                     ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
                     if (clipboard != null) clipboard.setPrimaryClip(ClipData.newPlainText("Check-in Rumo", value));
@@ -121,6 +144,7 @@ public class MainActivity extends Activity {
             }
             @JavascriptInterface
             public void configureReminders(int count, String timesCsv) {
+                if (!lockController.isUnlocked()) return;
                 runOnUiThread(() -> {
                     if (count < 0 || count > 3 || timesCsv == null) {
                         notifyReminderResult(false, "Escolha inválida de lembretes.");
@@ -148,6 +172,7 @@ public class MainActivity extends Activity {
             }
             @JavascriptInterface
             public void saveFile(String filename, String mime, String contents) {
+                if (!lockController.isUnlocked() || contents == null || contents.length() > 16000000) return;
                 runOnUiThread(() -> {
                     // Preserve journal exports with Android's secure system file picker.
                     pendingExport = new PendingExport(filename, mime, contents);
@@ -163,14 +188,95 @@ public class MainActivity extends Activity {
                     }
                 });
             }
+            @JavascriptInterface public String getProtectedItem(String name) {
+                if (!lockController.isUnlocked()) throw new IllegalStateException("Diário bloqueado");
+                return vault.get(name);
+            }
+            @JavascriptInterface public boolean setProtectedItem(String name, String value) {
+                if (!lockController.isUnlocked()) return false;
+                try { vault.put(name, value); return true; } catch (Exception error) { return false; }
+            }
+            @JavascriptInterface public boolean setProtectedBundle(String json) {
+                if (!lockController.isUnlocked()) return false;
+                try { vault.putBundle(json); return true; } catch (Exception error) { return false; }
+            }
+            @JavascriptInterface public boolean migrateStorage(String json) {
+                if (!lockController.isUnlocked()) return false;
+                try { vault.migrate(json); return true; } catch (Exception error) { return false; }
+            }
+            @JavascriptInterface public String getAppInfo() {
+                if (!lockController.isUnlocked()) return "{}";
+                org.json.JSONObject info = new org.json.JSONObject();
+                try {
+                    info.put("version", getPackageManager().getPackageInfo(getPackageName(), 0).versionName)
+                        .put("android", Build.VERSION.RELEASE).put("encryptedStorage", true)
+                        .put("pinEnabled", vault.pinEnabled()).put("biometricEnabled", vault.biometricEnabled())
+                        .put("biometricAvailable", lockController.biometricsAvailable())
+                        .put("supportEmail", getString(R.string.support_email).trim());
+                } catch (Exception ignored) { }
+                return info.toString();
+            }
+            @JavascriptInterface public void securitySettings() {
+                runOnUiThread(() -> { if (lockController.isUnlocked()) lockController.showSettings(); });
+            }
+            @JavascriptInterface public void lockNow() {
+                runOnUiThread(() -> { if (vault.pinEnabled()) lockController.lock(); });
+            }
+            @JavascriptInterface public boolean syncWidget(String json) {
+                if (!lockController.isUnlocked() || json == null || json.length() > 2000) return false;
+                try { RumoWidgetProvider.sync(MainActivity.this, json); return true; } catch (Exception error) { return false; }
+            }
+            @JavascriptInterface public void addWidget() {
+                runOnUiThread(() -> {
+                    if (!lockController.isUnlocked()) return;
+                    if (!RumoWidgetProvider.requestAdd(MainActivity.this)) Toast.makeText(MainActivity.this,
+                            "Na tela inicial, mantenha um espaço vazio pressionado > Widgets > Rumo.", Toast.LENGTH_LONG).show();
+                });
+            }
+            @JavascriptInterface public void composeFeedback(String category, String description) {
+                if (!lockController.isUnlocked() || description == null || description.length() > 8000) return;
+                runOnUiThread(() -> {
+                    if (!lockController.isUnlocked()) return;
+                    String address = getString(R.string.support_email).trim();
+                    if (!android.util.Patterns.EMAIL_ADDRESS.matcher(address).matches()) {
+                        Toast.makeText(MainActivity.this, "O contato ainda será configurado. Use Copiar mensagem.", Toast.LENGTH_LONG).show(); return;
+                    }
+                    String kind = "bug".equals(category) ? "Problema" : "Sugestão";
+                    String version = "1.3.0";
+                    try { version = getPackageManager().getPackageInfo(getPackageName(), 0).versionName; } catch (Exception ignored) { }
+                    String subject = "Rumo — " + kind + " — v" + version;
+                    String body = description + "\n\nRumo " + version + " | Android " + Build.VERSION.RELEASE
+                            + "\nNenhum registro do diário foi anexado automaticamente.";
+                    Intent email = new Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:" + Uri.encode(address, "@.+-")
+                            + "?subject=" + Uri.encode(subject) + "&body=" + Uri.encode(body)));
+                    email.putExtra(Intent.EXTRA_EMAIL, new String[]{address}); email.putExtra(Intent.EXTRA_SUBJECT, subject); email.putExtra(Intent.EXTRA_TEXT, body);
+                    try { startActivity(email); }
+                    catch (android.content.ActivityNotFoundException error) { Toast.makeText(MainActivity.this, "Nenhum aplicativo de e-mail disponível. Use Copiar mensagem.", Toast.LENGTH_LONG).show(); }
+                });
+            }
         }, "RumoAndroid");
         // Os trabalhos persistem após reiniciar; ao abrir, alinhamos horários ao fuso atual.
         RumoReminderWorker.refreshIfEnabled(this);
-        webView.loadUrl(APP_URL);
+        if (lockController.isUnlocked()) showUnlockedApp(); else lockController.lock();
+    }
+
+    private void showUnlockedApp() {
+        if (webView == null) return;
+        webView.onResume(); webView.resumeTimers();
+        if (!pageStarted) { pageStarted = true; webView.loadUrl(APP_URL); }
+        else showToolsIfRequested();
+        if (queuedImport != null && importFileCallback != null) {
+            Uri uri = queuedImport; queuedImport = null; ValueCallback<Uri[]> callback = importFileCallback; importFileCallback = null; callback.onReceiveValue(new Uri[]{uri});
+        }
+        if (queuedNotificationEnabled != null) {
+            boolean enabled = queuedNotificationEnabled; String message = queuedNotificationMessage;
+            queuedNotificationEnabled = null; queuedNotificationMessage = null; notifyReminderResult(enabled, message);
+        }
     }
 
     private void notifyReminderResult(boolean enabled, String message) {
         if (webView == null) return;
+        if (lockController != null && !lockController.isUnlocked()) { queuedNotificationEnabled = enabled; queuedNotificationMessage = message; return; }
         String safe = org.json.JSONObject.quote(message);
         webView.evaluateJavascript("window.RumoNativeNotificationsResult && window.RumoNativeNotificationsResult(" + (enabled ? "true" : "false") + "," + safe + ")", null);
     }
@@ -196,9 +302,10 @@ public class MainActivity extends Activity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == OPEN_DOCUMENT) {
             ValueCallback<Uri[]> callback = importFileCallback;
-            importFileCallback = null;
             if (callback != null) {
                 Uri uri = resultCode == RESULT_OK && data != null ? data.getData() : null;
+                if (uri != null && lockController != null && !lockController.isUnlocked()) { queuedImport = uri; return; }
+                importFileCallback = null;
                 callback.onReceiveValue(uri == null ? null : new Uri[]{uri});
             }
         } else if (requestCode == CREATE_DOCUMENT) {
@@ -218,12 +325,18 @@ public class MainActivity extends Activity {
 
     @Override
     public void onBackPressed() {
+        if (webView == null || lockController == null || !lockController.isUnlocked()) { super.onBackPressed(); return; }
         // In-app navigation is tab based; Android Back returns to the calendar.
         webView.evaluateJavascript("(function(){var b=document.querySelector('[data-tab=calendar]');if(b)b.click();})()", null);
     }
 
     private void showToolsIfRequested() {
+        if (lockController == null || !lockController.isUnlocked()) return;
         Intent intent = getIntent();
+        if (intent != null && intent.getBooleanExtra("rumo_open_checkin", false) && webView != null) {
+            intent.removeExtra("rumo_open_checkin");
+            webView.evaluateJavascript("(function(){var b=document.querySelector('[data-action=\\\"today-checkin\\\"]');if(b)b.click();})()", null);
+        }
         if (intent != null && intent.getBooleanExtra("rumo_open_tools", false) && webView != null) {
             intent.removeExtra("rumo_open_tools");
             webView.evaluateJavascript("(function(){var b=document.querySelector('[data-tab=tools]');if(b)b.click();})()", null);
@@ -237,8 +350,23 @@ public class MainActivity extends Activity {
         showToolsIfRequested();
     }
 
+    @Override protected void onStart() {
+        super.onStart();
+        if (lockController != null && !lockController.isUnlocked()) lockController.lock();
+    }
+    @Override protected void onResume() {
+        super.onResume();
+        if (webView != null && lockController != null && lockController.isUnlocked()) { webView.onResume(); webView.resumeTimers(); }
+    }
+    @Override protected void onStop() {
+        if (lockController != null) lockController.lock();
+        if (webView != null) { webView.onPause(); webView.pauseTimers(); }
+        super.onStop();
+    }
+
     @Override
     protected void onDestroy() {
+        if (lockController != null) lockController.destroy();
         if (importFileCallback != null) {
             importFileCallback.onReceiveValue(null);
             importFileCallback = null;

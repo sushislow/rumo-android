@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root" android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:padding="16dp" android:gravity="center_vertical"
+    android:background="@drawable/rumo_widget_background">
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Rumo · Meu progresso" android:textColor="#C5D6DF" android:textSize="12sp" />
+    <TextView android:id="@+id/widget_number" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="—" android:textColor="#78E1BB" android:textSize="34sp" android:textStyle="bold" />
+    <TextView android:id="@+id/widget_label" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Contagem oculta" android:textColor="#F0F8FA" android:textSize="14sp" />
+    <TextView android:id="@+id/widget_detail" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Ative em Dados" android:textColor="#BAC9D4" android:textSize="11sp" android:layout_marginTop="4dp" />
+    <TextView android:id="@+id/widget_button" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Fazer check-in  ›" android:textColor="#78E1BB" android:textSize="13sp"
+        android:paddingTop="10dp" android:paddingBottom="6dp" />
+</LinearLayout>
