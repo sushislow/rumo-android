@@ -59,7 +59,7 @@ const {pathToFileURL}=require('node:url');
   await page.locator('[data-action="send-feedback"]').click();assert.deepEqual(await page.evaluate(()=>window.__calls.feedback),{kind:'bug',text:'O botão não respondeu ao toque.'});
   await page.locator('[data-action="copy-feedback"]').click();const copied=await page.evaluate(()=>window.__calls.clipboard);assert.ok(copied.includes('O botão não respondeu'));assert.ok(!copied.includes('rascunho que deve continuar'));
   await page.locator('[data-action="security-settings"]').click();assert.equal(await page.evaluate(()=>window.__calls.security),true);
-  for(const theme of ['oceano','violeta','floresta','areia']){await page.locator(`[data-action="choose-theme"][data-theme="${theme}"]`).click();assert.equal(await page.locator('html').getAttribute('data-theme'),theme);}
+  for(const theme of ['oceano','violeta','floresta','areia','aurora','grafite','ceu','terracota']){await page.locator(`[data-action="choose-theme"][data-theme="${theme}"]`).click();assert.equal(await page.locator('html').getAttribute('data-theme'),theme);}
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   if(process.env.RUMO_QA_DIR)await page.screenshot({path:path.join(process.env.RUMO_QA_DIR,'mobile-settings.png'),fullPage:true});
   await page.setViewportSize({width:1280,height:900});await page.locator('[data-tab="stats"]').click();
@@ -76,6 +76,6 @@ const {pathToFileURL}=require('node:url');
   assert.ok((await failed.locator('#view').innerText()).includes('preservados'));
   assert.ok(await failed.evaluate(()=>localStorage.getItem('rumo_diario_v1').includes('preservar cópia anterior')));
   await failure.close();
-  console.log('PASS: UI flows with native bridge, migration success/failure, draft retention, custom triggers, quick check-in, alternatives, plan, widget/email privacy, four themes and layouts.');
+  console.log('PASS: UI flows with native bridge, migration success/failure, draft retention, custom triggers, quick check-in, alternatives, plan, widget/email privacy, eight themes and layouts.');
  } finally {await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

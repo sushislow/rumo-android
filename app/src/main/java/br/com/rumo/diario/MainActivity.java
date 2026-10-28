@@ -36,6 +36,7 @@ public class MainActivity extends FragmentActivity {
     private static final String APP_URL = "https://appassets.androidplatform.net/assets/index.html";
     private WebView webView;
     private RumoVault vault;
+    private RumoAccountController accountController;
     private RumoLockController lockController;
     private boolean pageStarted;
     private Uri queuedImport;
@@ -96,7 +97,11 @@ public class MainActivity extends FragmentActivity {
         webView.setWebViewClient(new WebViewClientCompat() {
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-                return assetLoader.shouldInterceptRequest(request.getUrl());
+                WebResourceResponse local = assetLoader.shouldInterceptRequest(request.getUrl());
+                if (local != null) return local;
+                // INTERNET is only for native authentication. The diary cannot reach any server.
+                return new WebResourceResponse("text/plain", "UTF-8", 403, "Blocked", java.util.Collections.emptyMap(),
+                        new java.io.ByteArrayInputStream(new byte[0]));
             }
             @Override
             public void onPageFinished(WebView view, String url) {
@@ -212,9 +217,17 @@ public class MainActivity extends FragmentActivity {
                         .put("android", Build.VERSION.RELEASE).put("encryptedStorage", true)
                         .put("pinEnabled", vault.pinEnabled()).put("biometricEnabled", vault.biometricEnabled())
                         .put("biometricAvailable", lockController.biometricsAvailable())
+                        .put("accountConfigured", RumoAccountController.configured(MainActivity.this))
                         .put("supportEmail", getString(R.string.support_email).trim());
                 } catch (Exception ignored) { }
                 return info.toString();
+            }
+            @JavascriptInterface public void accountSettings() {
+                runOnUiThread(() -> {
+                    if (!lockController.isUnlocked()) return;
+                    if (accountController == null) accountController = new RumoAccountController(MainActivity.this, vault);
+                    accountController.show();
+                });
             }
             @JavascriptInterface public void securitySettings() {
                 runOnUiThread(() -> { if (lockController.isUnlocked()) lockController.showSettings(); });
@@ -242,7 +255,7 @@ public class MainActivity extends FragmentActivity {
                         Toast.makeText(MainActivity.this, "O contato ainda será configurado. Use Copiar mensagem.", Toast.LENGTH_LONG).show(); return;
                     }
                     String kind = "bug".equals(category) ? "Problema" : "Sugestão";
-                    String version = "1.3.0";
+                    String version = "1.4.0-beta";
                     try { version = getPackageManager().getPackageInfo(getPackageName(), 0).versionName; } catch (Exception ignored) { }
                     String subject = "Rumo — " + kind + " — v" + version;
                     String body = description + "\n\nRumo " + version + " | Android " + Build.VERSION.RELEASE
@@ -359,6 +372,8 @@ public class MainActivity extends FragmentActivity {
         if (webView != null && lockController != null && lockController.isUnlocked()) { webView.onResume(); webView.resumeTimers(); }
     }
     @Override protected void onStop() {
+        if (webView != null) webView.evaluateJavascript("window.RumoDismissSensitiveDialogs && window.RumoDismissSensitiveDialogs()", null);
+        if (accountController != null) accountController.dismiss();
         if (lockController != null) lockController.lock();
         if (webView != null) { webView.onPause(); webView.pauseTimers(); }
         super.onStop();
@@ -366,6 +381,7 @@ public class MainActivity extends FragmentActivity {
 
     @Override
     protected void onDestroy() {
+        if (accountController != null) accountController.destroy();
         if (lockController != null) lockController.destroy();
         if (importFileCallback != null) {
             importFileCallback.onReceiveValue(null);

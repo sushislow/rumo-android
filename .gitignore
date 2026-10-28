@@ -8,3 +8,7 @@
 .DS_Store
 Rumo_*.zip
 node_modules/
+.env*
+.dev.vars
+*.apk
+*.zip

@@ -1,3 +1,19 @@
+# Rumo 1.4.0-beta — 28/10/2026
+
+- Painel inicial atualizado e oito temas; novas opções Aurora, Grafite, Céu e Terracota.
+- Telas nativas de PIN e conta usam a paleta escolhida, com campos arredondados e contraste próprio.
+- Backup protegido usa um formulário de senha do Rumo, com confirmação, mostrar/ocultar e cancelamento.
+- A abertura em segundo plano fecha os formulários sensíveis antes do bloqueio local.
+- Conta opcional com Firebase Authentication: Google pelo Credential Manager, e-mail/senha, verificação e recuperação por link de uso único.
+- A conta começa desativada e exige configuração explícita em `rumo_account.xml`. A conta não envia o diário e não substitui o PIN ou o backup.
+- Permissão de rede adicionada para a conta nativa. A WebView continua restrita aos arquivos locais e tem CSP sem conexões de rede.
+- Interface para consultar o acesso à compra; download autenticado é preparado no projeto web separado.
+- Testes de interface por DOM verificam oito temas, senhas mascaradas, erros, cancelamento, exportação criptografada e limpeza ao bloquear.
+
+O pacote é beta. Configuração de identidade/pagamento, assinatura definitiva, teste em aparelho e validação comercial continuam necessários.
+
+---
+
 # Histórico do Rumo
 
 ## v1.3.0 (beta) — 26/10/2026

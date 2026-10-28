@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Public Firebase configuration, never a service-account key or payment secret. -->
+    <bool name="rumo_account_enabled">false</bool>
+    <string name="rumo_firebase_api_key" translatable="false"></string>
+    <string name="rumo_firebase_project_id" translatable="false"></string>
+    <string name="rumo_firebase_app_id" translatable="false"></string>
+    <string name="rumo_google_web_client_id" translatable="false"></string>
+    <!-- HTTPS origin of the deployed commercial Worker, without a trailing slash. -->
+    <string name="rumo_account_origin" translatable="false"></string>
+</resources>

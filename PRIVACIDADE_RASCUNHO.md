@@ -1,3 +1,15 @@
+# Complemento de privacidade — 1.4.0-beta
+
+A versão 1.4 adiciona uma conta opcional que começa desativada. Quando habilitada pelo responsável e aberta pelo usuário, Firebase Authentication processa e-mail, senha ou identidade Google para autenticação. A conta e a compra são separadas do diário. O APK agora tem permissão de internet para essas ações nativas, mas a WebView do diário só recebe recursos internos e não pode acessar servidores externos.
+
+O código não acrescenta Analytics nem ferramentas de rastreamento. Os registros locais continuam no cofre, e nenhuma senha/token de conta é disponibilizada à ponte JavaScript do diário. O SDK de autenticação mantém os dados de sessão na área privada do aplicativo. A recuperação por link do e-mail não redefine o PIN nem a senha de backup. Sair/excluir conta de acesso não apaga automaticamente o diário local.
+
+O servidor comercial proposto guarda identidade da conta e transações, sem check-ins. Antes de habilitar vendas, este rascunho precisa ser substituído por informações completas do responsável, contato, fornecedores, bases legais, retenção, direitos e procedimentos de atendimento. Não é uma declaração de conformidade jurídica ou auditoria de segurança.
+
+---
+
+## Histórico do rascunho 1.3 (as mudanças da versão atual estão descritas acima)
+
 # Rumo — aviso de privacidade para a versão beta 1.3
 
 Rascunho para testes pessoais com adultos. Deve ser revisto antes de disponibilização comercial ampla.

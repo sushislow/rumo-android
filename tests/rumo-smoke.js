@@ -2,6 +2,8 @@ const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict');
 const {webcrypto}=require('node:crypto');
 const html=fs.readFileSync(require('node:path').join(__dirname,'../app/src/main/assets/index.html'),'utf8');
 let source=html.match(/<script>([\s\S]*?)<\/script>/)[1];
+source=source.replace('      let activePasswordDialog=null;', '      async function passwordDialog(){ return prompt(); } let activePasswordDialog=null;');
+source=source.replace('      function passwordDialog({title,description,confirm=false}){', '      function unusedPasswordDialog({title,description,confirm=false}){');
 source=source.replace('      render();\n      if(!window.RumoAndroid', `      globalThis.__T={app,load,save,sanitizeEntry,blankEntry,checkinPage,statsPage,toolsPage,exportCSV,exportSecure,decryptBackup,importJSON,summaryFor,settingsPage,messageFor,loadPrefs,savePrefs,applyTheme,feedbackHTML,get prefs(){return prefs;},get ledger(){return ledger;}};\n      render();\n      if(!window.RumoAndroid`);
 let onEvents={};
 const elems={view:{innerHTML:''},toast:{textContent:'',classList:{add(){},remove(){}}}};
@@ -9,7 +11,7 @@ const documents={ documentElement:{setAttribute(){}},querySelector(){return null
 let savedFiles=[];
 const oldEntry={status:'slip',urge:8,triggers:['Banheiro'],habits:{noPhone:false},bathroom:'difficult',note:'teste do diário antigo',updatedAt:'2026-10-25T10:00:00.000Z'};
 const storage={'rumo_diario_v1':JSON.stringify({'2026-10-25':oldEntry})};
-const passwords=['senha-de-teste-123','senha-de-teste-123'];
+const passwords=['senha-de-teste-123'];
 const dNow=new Date();const todayISO=[dNow.getFullYear(),String(dNow.getMonth()+1).padStart(2,'0'),String(dNow.getDate()).padStart(2,'0')].join('-');
 const ctx={document:documents,localStorage:{getItem:k=>storage[k]??null,setItem:(k,v)=>{storage[k]=v}},window:{RumoAndroid:{saveFile:(...args)=>savedFiles.push(args)},scrollTo(){}},navigator:{},crypto:webcrypto,TextEncoder,TextDecoder,Blob,btoa,atob,FormData,console,Date,Math,Number,JSON,String,Object,Array,Promise,Uint8Array,parseInt,setTimeout,clearTimeout,setInterval,clearInterval,prompt:()=>passwords.shift(),confirm:()=>true, alert:()=>{},URL};
 vm.createContext(ctx);vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../app/src/main/assets/features.js'),'utf8'),ctx);vm.runInContext(source,ctx);
@@ -58,7 +60,7 @@ vm.createContext(ctx);vm.runInContext(fs.readFileSync(require('node:path').join(
  assert.ok(csv.includes("'=HYPERLINK"),'Spreadsheet formulas are neutralized');
  const features=require('../app/src/main/assets/features.js');
  for(let i=1;i<=50;i++)t.app.entries[features.move('2026-10-01',-i)]=t.sanitizeEntry({status:'done',note:'x'.repeat(4000),updatedAt:'2026-09-01T12:00:00Z'});
- passwords.push('senha-de-teste-123','senha-de-teste-123');
+ passwords.push('senha-de-teste-123');
  await t.exportSecure();await new Promise(r=>setTimeout(r,100));
  const large=JSON.parse(savedFiles[savedFiles.length-1][2]);assert.ok(large.ciphertext.length>200000);
  passwords.push('senha-de-teste-123');const roundTrip=await t.decryptBackup(large);

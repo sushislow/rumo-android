@@ -42,6 +42,10 @@ jobs:
           mkdir -p "$RUNNER_TEMP/rumo-crypto-tests"
           javac -d "$RUNNER_TEMP/rumo-crypto-tests" app/src/main/java/br/com/rumo/diario/VaultCrypto.java tests/VaultCryptoTest.java
           java -cp "$RUNNER_TEMP/rumo-crypto-tests" br.com.rumo.diario.VaultCryptoTest
+      - name: Testar campos de senha e temas
+        run: |
+          npm install --prefix "$RUNNER_TEMP/rumo-ui" jsdom@26.1.0 --no-audit --no-fund
+          NODE_PATH="$RUNNER_TEMP/rumo-ui/node_modules" node tests/security-ui.cjs
       - name: Compilar APK de release
         env:
           RUMO_KEYSTORE_PATH: ${{ runner.temp }}/rumo-upload.jks

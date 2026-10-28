@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- No INTERNET permission: this app stays offline. -->
+    <!-- Network is used only by the optional native account surface. Diary WebView traffic is blocked. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
     <queries>
@@ -16,6 +17,7 @@
         android:fullBackupContent="false"
         android:dataExtractionRules="@xml/rumo_data_extraction_rules"
         android:supportsRtl="true">
+        <meta-data android:name="firebase_data_collection_default_enabled" android:value="false"/>
         <receiver android:name=".RumoWidgetProvider" android:exported="false" android:label="@string/rumo_widget_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
