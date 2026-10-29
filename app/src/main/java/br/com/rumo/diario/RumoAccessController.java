@@ -59,18 +59,30 @@ final class RumoAccessController {
     }
     private void removeScreen(){if(screen!=null){container.removeView(screen);screen=null;status=null;}}
     private void showScreen(String text){
-        removeScreen();RumoStyle style=new RumoStyle(activity,vault);LinearLayout body=style.column();body.setBackgroundColor(style.bg);body.setGravity(Gravity.CENTER_VERTICAL);body.setMinimumHeight(style.dp(640));
-        body.addView(style.label("Rumo",38));body.addView(style.label("Um acesso. Seu espaço pessoal.",23));
-        body.addView(style.label("Instalação gratuita. Compra única para liberar o diário. Seus registros continuam neste aparelho.",16));
-        FirebaseUser value=user();body.addView(style.label(value==null?"Comece pela sua conta do Rumo.":value.getEmail()==null?"Conta conectada":value.getEmail(),14));
-        status=style.label(text,15);status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);body.addView(status);
-        body.addView(style.button(value==null?"Entrar ou criar minha conta":"Minha conta",accounts::show));
-        body.addView(style.button("Já comprei · atualizar acesso",()->refresh(false)));
-        body.addView(style.button("Comprar uma vez pelo Google Play",this::buy));
-        body.addView(style.button("Restaurar compra do Google Play",this::restore));
-        body.addView(style.label("O PIN protege seu diário e é diferente da senha da conta. Após ativar, o Rumo permite até 7 dias offline antes de conferir o acesso novamente.",13));
-        if(!configured())body.addView(style.label("A ativação comercial está em configuração. Nenhuma compra será iniciada nesta versão sem os serviços necessários.",13));
-        screen=new ScrollView(activity);screen.setBackgroundColor(style.bg);screen.setFillViewport(true);screen.addView(body);container.addView(screen,new FrameLayout.LayoutParams(-1,-1));container.bringChildToFront(screen);
+        removeScreen();RumoStyle style=new RumoStyle(activity,vault);
+        LinearLayout body=style.column();body.setBackgroundColor(style.bg);body.setPadding(style.dp(26),style.dp(24),style.dp(26),style.dp(28));
+        TextView brand=style.label("rumo.",25);brand.setTypeface(android.graphics.Typeface.DEFAULT,android.graphics.Typeface.BOLD);brand.setLetterSpacing(-.05f);body.addView(brand);
+        body.addView(new RumoHorizonView(style),new LinearLayout.LayoutParams(-1,style.dp(130)));
+        TextView overline=style.label("UM DIA DE CADA VEZ",11);overline.setTextColor(style.accent);overline.setLetterSpacing(.16f);body.addView(overline);
+        TextView title=style.label("Seu próximo passo\ncomeça aqui.",33);title.setTypeface(android.graphics.Typeface.create("sans-serif-medium",android.graphics.Typeface.NORMAL));title.setLetterSpacing(-.035f);title.setLineSpacing(0,1.05f);body.addView(title);
+        TextView intro=style.label("Um espaço para entender seus hábitos e construir novas escolhas. No seu ritmo.",16);intro.setTextColor(style.muted);body.addView(intro);
+        FirebaseUser value=user();
+        LinearLayout card=style.column();card.setPadding(style.dp(18),style.dp(12),style.dp(18),style.dp(16));card.setBackground(style.box(style.panel,style.border));
+        LinearLayout.LayoutParams cardParams=new LinearLayout.LayoutParams(-1,-2);cardParams.setMargins(0,style.dp(20),0,style.dp(16));card.setLayoutParams(cardParams);
+        TextView account=style.label(value==null?"Seu espaço começa com uma conta":value.getEmail()==null?"Sua conta está conectada":value.getEmail(),15);account.setTypeface(android.graphics.Typeface.DEFAULT,android.graphics.Typeface.BOLD);card.addView(account);
+        status=style.label(text,14);status.setTextColor(style.muted);status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);card.addView(status);
+        card.addView(style.button(value==null?"Entrar ou criar minha conta":"Atualizar meu acesso",value==null?accounts::show:()->refresh(false)));
+        card.addView(style.secondaryButton(value==null?"Já comprei · conferir acesso":"Minha conta",value==null?()->refresh(false):accounts::show));
+        body.addView(card);
+        TextView purchase=style.label("Instalação gratuita. O acesso ao diário é liberado com uma compra única.",13);purchase.setTextColor(style.muted);body.addView(purchase);
+        boolean purchaseReady=configured()&&activity.getResources().getBoolean(R.bool.rumo_play_billing_enabled);
+        android.widget.Button buyButton=style.secondaryButton(purchaseReady?"Comprar pelo Google Play":"Compras em preparação",this::buy);buyButton.setEnabled(purchaseReady);if(!purchaseReady)buyButton.setAlpha(.55f);body.addView(buyButton);
+        android.widget.Button restoreButton=style.secondaryButton("Restaurar compra do Google Play",this::restore);restoreButton.setEnabled(purchaseReady);if(!purchaseReady)restoreButton.setAlpha(.55f);body.addView(restoreButton);
+        TextView privacy=style.label("Seu diário fica neste aparelho. O PIN é separado da senha da conta. Depois de ativar, conecte-se ao menos a cada 7 dias para conferir o acesso.",12);privacy.setTextColor(style.muted);privacy.setLineSpacing(style.dp(3),1);body.addView(privacy);
+        FrameLayout centered=new FrameLayout(activity){@Override protected void onMeasure(int width,int height){super.onMeasure(MeasureSpec.makeMeasureSpec(Math.min(MeasureSpec.getSize(width),style.dp(560)),MeasureSpec.AT_MOST),height);}};
+        centered.addView(body,new FrameLayout.LayoutParams(-1,-2));
+        LinearLayout outer=new LinearLayout(activity);outer.setOrientation(LinearLayout.VERTICAL);outer.setGravity(Gravity.CENTER_HORIZONTAL);outer.addView(centered,new LinearLayout.LayoutParams(-1,-2));
+        screen=new ScrollView(activity);screen.setBackgroundColor(style.bg);screen.setFillViewport(true);screen.addView(outer);container.addView(screen,new FrameLayout.LayoutParams(-1,-1));container.bringChildToFront(screen);
     }
     private boolean configured(){return RumoAccountController.configured(activity)&&!RumoAccountApi.origin(activity).isEmpty()&&!activity.getString(R.string.rumo_license_public_key).trim().isEmpty();}
     void accountChanged(){epoch++;busy=false;allowed=false;storeReady=false;accountId="";cache.clear();if(BuildConfig.REQUIRE_LICENSE)afterAccess.run();}

@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Public Firebase configuration, never a service-account key or payment secret. -->
-    <bool name="rumo_account_enabled">false</bool>
-    <string name="rumo_firebase_api_key" translatable="false"></string>
-    <string name="rumo_firebase_project_id" translatable="false"></string>
-    <string name="rumo_firebase_app_id" translatable="false"></string>
-    <string name="rumo_google_web_client_id" translatable="false"></string>
+    <bool name="rumo_account_enabled">true</bool>
+    <string name="rumo_firebase_api_key" translatable="false">AIzaSyBg4sFW12EYqThPNpD5eUvcXR7O6A45NXI</string>
+    <string name="rumo_firebase_project_id" translatable="false">rumo-aff47</string>
+    <string name="rumo_firebase_app_id" translatable="false">1:177890603441:android:a0a59204982487c3880d90</string>
+    <string name="rumo_google_web_client_id" translatable="false">177890603441-cbqlca0b94uegsrn1dujiv2ti1787qji.apps.googleusercontent.com</string>
     <!-- HTTPS origin of the deployed commercial Worker, without a trailing slash. -->
     <string name="rumo_account_origin" translatable="false"></string>
     <!-- Public SPKI PEM only. Its matching PKCS8 private key lives exclusively on the server. -->

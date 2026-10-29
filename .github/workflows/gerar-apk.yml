@@ -36,6 +36,7 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/rumo-ui" jsdom@26.1.0 --no-audit --no-fund
           NODE_PATH="$RUNNER_TEMP/rumo-ui/node_modules" node tests/security-ui.cjs
+          NODE_PATH="$RUNNER_TEMP/rumo-ui/node_modules" node tests/home-ui.cjs
       - name: Gerar APK de testes
         run: gradle :app:assembleDebug :app:assembleCommercialDebug --no-daemon
       - name: Disponibilizar APK

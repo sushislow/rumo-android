@@ -74,6 +74,10 @@ public final class RumoStyle {
         LinearLayout.LayoutParams params=new LinearLayout.LayoutParams(-1,-2); params.setMargins(0,dp(6),0,dp(6)); view.setLayoutParams(params);
         view.setOnClickListener(v->action.run()); return view;
     }
+    public Button secondaryButton(String value,Runnable action) {
+        Button view=button(value,action);view.setTag("rumo-secondary");
+        view.setTextColor(text);view.setBackground(box(panel,border));return view;
+    }
     public AlertDialog.Builder dialog() {
         RumoStyle palette=this;
         return new AlertDialog.Builder(new ContextThemeWrapper(activity,light?
@@ -92,7 +96,7 @@ public final class RumoStyle {
     private void colorTree(View view) {
         if(view instanceof EditText) return;
         if(view instanceof android.widget.CompoundButton) { ((android.widget.CompoundButton)view).setTextColor(text); ((android.widget.CompoundButton)view).setButtonTintList(ColorStateList.valueOf(accent)); return; }
-        if(view instanceof Button) { ((Button)view).setTextColor(onAccent); return; }
+        if(view instanceof Button) { ((Button)view).setTextColor("rumo-secondary".equals(view.getTag())?text:onAccent); return; }
         if(view instanceof TextView) ((TextView)view).setTextColor(text);
         if(view instanceof ViewGroup) for(int i=0;i<((ViewGroup)view).getChildCount();i++)colorTree(((ViewGroup)view).getChildAt(i));
     }

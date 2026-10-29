@@ -1,3 +1,14 @@
+# 1.5.1-beta — início e boas-vindas · 29/10/2026
+
+- Tela inicial com horizonte desenhado localmente, tipografia mais leve e um botão principal de check-in.
+- Mensagem contextual para primeiro acesso, registro parcial, dia registrado e dia com consumo.
+- Ajuda rápida acessível diretamente, semana de sete dias com estados explícitos e calendário completo expansível.
+- Progresso acumulado compacto; preferência de ocultar o contador respeitada. Ausência de registro não é contada como sucesso.
+- Entrada comercial nativa com nova hierarquia, ilustração vetorial local, botões secundários e compras indisponíveis sinalizadas.
+- Campos de conta e ações secundárias usam as cores escolhidas; nenhuma mudança no PIN, cofre, dados ou verificação da licença.
+- Configuração Android Firebase recebida já integrada; assinatura/SHA-1 e serviços comerciais permanecem pendentes.
+- versionCode 8; teste de navegação da tela inicial adicionado ao Actions.
+
 # 1.5.0-beta — base comercial
 
 - Conta e licença obrigatórias nos builds comerciais antes de carregar o diário.

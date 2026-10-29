@@ -92,7 +92,7 @@ public final class RumoAccountController {
         RumoStyle palette=style();fields=palette.column();status=palette.label("",14);
         FirebaseUser user=auth.getCurrentUser();
         if(user==null){
-            fields.addView(palette.label("Um acesso para sua compra. Seu diário continua neste aparelho.",15));
+            fields.addView(palette.label("Seu próximo passo começa aqui. Entre na conta usada na compra ou crie a sua.",15));
             email=palette.input("Seu e-mail",InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
             password=palette.input("Senha da conta",InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_PASSWORD);
             fields.addView(palette.label("E-mail",13));fields.addView(email);fields.addView(palette.label("Senha",13));fields.addView(password);
@@ -100,9 +100,9 @@ public final class RumoAccountController {
             reveal.setOnCheckedChangeListener((view,checked)->{password.setInputType(InputType.TYPE_CLASS_TEXT|(checked?InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD:InputType.TYPE_TEXT_VARIATION_PASSWORD));password.setSelection(password.length());});fields.addView(reveal);
             adult=new CheckBox(activity);adult.setText("Tenho 18 anos ou mais");adult.setTextColor(palette.text);adult.setButtonTintList(android.content.res.ColorStateList.valueOf(palette.accent));fields.addView(adult);
             fields.addView(palette.button("Entrar com e-mail",()->emailSignIn(false)));
-            fields.addView(palette.button("Criar conta",()->emailSignIn(true)));
-            if(!activity.getString(R.string.rumo_google_web_client_id).trim().isEmpty())fields.addView(palette.button("Continuar com Google",this::google));
-            fields.addView(palette.button("Esqueci a senha da conta",this::reset));
+            fields.addView(palette.secondaryButton("Criar conta",()->emailSignIn(true)));
+            if(!activity.getString(R.string.rumo_google_web_client_id).trim().isEmpty())fields.addView(palette.secondaryButton("Continuar com Google",this::google));
+            fields.addView(palette.secondaryButton("Esqueci a senha da conta",this::reset));
             fields.addView(palette.label("A recuperação chega por um link de uso único no e-mail. Ela não redefine seu PIN nem a senha do backup.",13));
         }else{
             fields.addView(palette.label(user.getEmail()==null?"Conta conectada":user.getEmail(),18));
@@ -111,8 +111,8 @@ public final class RumoAccountController {
                 if(busy)return;busy(true);user.sendEmailVerification().addOnCompleteListener(task->{busy(false);message(task.isSuccessful()?"Confira seu e-mail para verificar a conta.":"Não foi possível enviar agora. Aguarde e tente novamente.");});
             }));
             fields.addView(palette.button("Conferir meu acesso",this::access));
-            fields.addView(palette.button("Sair da conta",this::signOut));
-            fields.addView(palette.button("Excluir conta de acesso",()->{ confirmation=style().dialog().setTitle("Excluir conta de acesso?")
+            fields.addView(palette.secondaryButton("Sair da conta",this::signOut));
+            fields.addView(palette.secondaryButton("Excluir conta de acesso",()->{ confirmation=style().dialog().setTitle("Excluir conta de acesso?")
                 .setMessage("Seu diário local será mantido. A exclusão encerra o login e pode impedir a recuperação da licença vinculada a esta conta. Não é um pedido de reembolso. Registros de compra podem ser mantidos para obrigações legais. Se necessário, exporte um backup antes.")
                 .setNegativeButton("Cancelar",null).setPositiveButton("Excluir conta",(d,w)->{
                     if(busy)return;busy(true);user.delete().addOnCompleteListener(task->{busy(false);if(task.isSuccessful()){show();changed();}else message("Entre novamente na conta antes de solicitar a exclusão.");});
