@@ -1,3 +1,13 @@
+# Atualização do rascunho — 1.5.0-beta
+
+O build comercial exige conta e licença; o debug pessoal continua separado. O Firebase gerencia autenticação. O servidor verifica compra Web ou Google Play e armazena os dados necessários de conta, pedido, comprovante e estado do acesso. A conta não sincroniza o diário. Google Play recebe um identificador de conta ofuscado no fluxo de compra.
+
+O Android guarda uma autorização assinada de até sete dias e horários de conferência para uso offline. Reembolso ou vencimento impedem nova ativação, sem apagar registros. O PIN e a senha de backup continuam locais. Excluir o login pode impedir recuperar a licença vinculada a esse UID; os controles de diário e reembolso são separados.
+
+Responsável, canal de suporte, prazos/bases de retenção e documentos finais ainda precisam ser preenchidos antes da venda. Consulte CONFIGURAR_VENDAS_1_5.md. O texto abaixo é histórico da versão anterior.
+
+---
+
 # Complemento de privacidade — 1.4.0-beta
 
 A versão 1.4 adiciona uma conta opcional que começa desativada. Quando habilitada pelo responsável e aberta pelo usuário, Firebase Authentication processa e-mail, senha ou identidade Google para autenticação. A conta e a compra são separadas do diário. O APK agora tem permissão de internet para essas ações nativas, mas a WebView do diário só recebe recursos internos e não pode acessar servidores externos.

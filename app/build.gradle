@@ -4,18 +4,19 @@ plugins {
 
 android {
     namespace 'br.com.rumo.diario'
-    compileSdk 35
-    buildToolsVersion '35.0.0'
+    compileSdk 36
+    buildToolsVersion '36.0.0'
 
     defaultConfig {
         applicationId 'br.com.rumo.diario'
         minSdk 24
-        targetSdk 34
-        versionCode 6
-        versionName '1.4.0-beta'
+        targetSdk 36
+        versionCode 7
+        versionName '1.5.0-beta'
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
 
+    buildFeatures { buildConfig true }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
@@ -36,15 +37,23 @@ android {
     buildTypes {
         debug {
             debuggable true
+            buildConfigField 'boolean', 'REQUIRE_LICENSE', 'false'
+        }
+        commercialDebug {
+            initWith debug
+            matchingFallbacks = ['debug']
+            buildConfigField 'boolean', 'REQUIRE_LICENSE', 'true'
         }
         release {
             minifyEnabled false
-            signingConfig signingConfigs.rumoRelease
+            if (System.getenv('RUMO_KEYSTORE_PATH')) signingConfig signingConfigs.rumoRelease
+            buildConfigField 'boolean', 'REQUIRE_LICENSE', 'true'
         }
     }
 }
 
 dependencies {
+    implementation 'com.android.billingclient:billing:9.1.0'
     implementation 'androidx.webkit:webkit:1.14.0'
     implementation 'androidx.work:work-runtime:2.10.1'
     implementation 'androidx.biometric:biometric:1.1.0'

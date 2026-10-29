@@ -8,4 +8,9 @@
     <string name="rumo_google_web_client_id" translatable="false"></string>
     <!-- HTTPS origin of the deployed commercial Worker, without a trailing slash. -->
     <string name="rumo_account_origin" translatable="false"></string>
+    <!-- Public SPKI PEM only. Its matching PKCS8 private key lives exclusively on the server. -->
+    <string name="rumo_license_public_key" translatable="false"></string>
+    <bool name="rumo_play_billing_enabled">false</bool>
+    <string name="rumo_play_product_id" translatable="false">rumo_acesso_completo</string>
+    <string name="rumo_purchase_mode" translatable="false">test</string>
 </resources>

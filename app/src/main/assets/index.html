@@ -362,7 +362,7 @@
       function applyTheme(){document.documentElement.setAttribute('data-theme',prefs.theme);document.querySelector('meta[name="theme-color"]')?.setAttribute('content',({areia:'#f8f5ec',ceu:'#eef5fc',terracota:'#faf2ed',aurora:'#211624',grafite:'#14171c',violeta:'#171326',floresta:'#0b201c'}[prefs.theme]||'#0b1421'));}
       function savePrefs(){try{storage.setItem(PREFS_KEY,JSON.stringify(prefs));return true;}catch(error){toast('Não foi possível salvar as preferências.');return false;}}
       function setPrefs(changes){const before=prefs;prefs={...prefs,...changes};if(!savePrefs()){prefs=before;return false;}return true;}
-      function appInfo(){try{return typeof window.RumoAndroid?.getAppInfo==='function'?JSON.parse(window.RumoAndroid.getAppInfo()):{version:'1.4.0-beta',encryptedStorage:false,supportEmail:''};}catch(error){return {version:'1.4.0-beta',encryptedStorage:false,supportEmail:''};}}
+      function appInfo(){try{return typeof window.RumoAndroid?.getAppInfo==='function'?JSON.parse(window.RumoAndroid.getAppInfo()):{version:'1.5.0-beta',encryptedStorage:false,supportEmail:''};}catch(error){return {version:'1.5.0-beta',encryptedStorage:false,supportEmail:''};}}
       function triggerOptions(entry){return F.labels([...triggers,...(prefs.customTriggers||[]),...(entry?.triggers||[])],60);}
       applyTheme();
       const congratulations=[

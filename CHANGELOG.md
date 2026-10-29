@@ -1,3 +1,13 @@
+# 1.5.0-beta — base comercial
+
+- Conta e licença obrigatórias nos builds comerciais antes de carregar o diário.
+- Compra única Google Play nativa, preço da loja e restauração de comprovante para validação no servidor.
+- Licença RSA ligada a conta/pacote/ambiente, com até sete dias offline e renovação online.
+- Servidor separado reconhece compras Web e Play; revalidação, reembolsos e notificações autenticadas.
+- Android API 36, tratamento de insets das barras, AGP 8.10.1/Gradle 8.11.1 e Billing 9.1.0.
+- Actions para teste pessoal, teste comercial e release AAB/APK com verificação de configuração.
+- Serviços reais, chaves do proprietário e publicação na loja continuam pendentes.
+
 # Rumo 1.4.0-beta — 28/10/2026
 
 - Painel inicial atualizado e oito temas; novas opções Aurora, Grafite, Céu e Terracota.

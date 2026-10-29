@@ -35,6 +35,8 @@ public class MainActivity extends FragmentActivity {
     private static final int NOTIFICATION_PERMISSION_REQUEST = 1003;
     private static final String APP_URL = "https://appassets.androidplatform.net/assets/index.html";
     private WebView webView;
+    private FrameLayout container;
+    private RumoAccessController accessController;
     private RumoVault vault;
     private RumoAccountController accountController;
     private RumoLockController lockController;
@@ -74,10 +76,17 @@ public class MainActivity extends FragmentActivity {
         webView.setSaveEnabled(false);
         if (Build.VERSION.SDK_INT >= 26) webView.setImportantForAutofill(android.view.View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS);
         webView.setBackgroundColor(Color.rgb(11, 20, 33));
-        FrameLayout container = new FrameLayout(this);
+        container = new FrameLayout(this);
         container.addView(webView, new FrameLayout.LayoutParams(-1, -1)); setContentView(container);
         lockController = new RumoLockController(this, vault, container, this::showUnlockedApp,
                 () -> webView.evaluateJavascript("window.RumoNativeSettingsChanged && window.RumoNativeSettingsChanged()", null));
+        // Keep content below the status/navigation bars when targeting Android 16.
+        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(container,(view,insets)->{
+            androidx.core.graphics.Insets bars=insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars()|androidx.core.view.WindowInsetsCompat.Type.displayCutout());
+            view.setPadding(bars.left,bars.top,bars.right,bars.bottom);return insets;
+        });
+        accountController=new RumoAccountController(this,vault,()->{if(accessController!=null)accessController.accountChanged();});
+        accessController=new RumoAccessController(this,vault,container,accountController,this::showUnlockedApp);
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setSaveFormData(false);
@@ -141,7 +150,7 @@ public class MainActivity extends FragmentActivity {
         webView.addJavascriptInterface(new Object() {
             @JavascriptInterface
             public void copyText(String value) {
-                if (!lockController.isUnlocked() || value == null || value.length() > 100000) return;
+                if (!canUseDiary() || value == null || value.length() > 100000) return;
                 runOnUiThread(() -> {
                     ClipboardManager clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
                     if (clipboard != null) clipboard.setPrimaryClip(ClipData.newPlainText("Check-in Rumo", value));
@@ -149,7 +158,7 @@ public class MainActivity extends FragmentActivity {
             }
             @JavascriptInterface
             public void configureReminders(int count, String timesCsv) {
-                if (!lockController.isUnlocked()) return;
+                if (!canUseDiary()) return;
                 runOnUiThread(() -> {
                     if (count < 0 || count > 3 || timesCsv == null) {
                         notifyReminderResult(false, "Escolha inválida de lembretes.");
@@ -177,7 +186,7 @@ public class MainActivity extends FragmentActivity {
             }
             @JavascriptInterface
             public void saveFile(String filename, String mime, String contents) {
-                if (!lockController.isUnlocked() || contents == null || contents.length() > 16000000) return;
+                if (!canUseDiary() || contents == null || contents.length() > 16000000) return;
                 runOnUiThread(() -> {
                     // Preserve journal exports with Android's secure system file picker.
                     pendingExport = new PendingExport(filename, mime, contents);
@@ -194,23 +203,23 @@ public class MainActivity extends FragmentActivity {
                 });
             }
             @JavascriptInterface public String getProtectedItem(String name) {
-                if (!lockController.isUnlocked()) throw new IllegalStateException("Diário bloqueado");
+                if (!canUseDiary()) throw new IllegalStateException("Diário bloqueado");
                 return vault.get(name);
             }
             @JavascriptInterface public boolean setProtectedItem(String name, String value) {
-                if (!lockController.isUnlocked()) return false;
+                if (!canUseDiary()) return false;
                 try { vault.put(name, value); return true; } catch (Exception error) { return false; }
             }
             @JavascriptInterface public boolean setProtectedBundle(String json) {
-                if (!lockController.isUnlocked()) return false;
+                if (!canUseDiary()) return false;
                 try { vault.putBundle(json); return true; } catch (Exception error) { return false; }
             }
             @JavascriptInterface public boolean migrateStorage(String json) {
-                if (!lockController.isUnlocked()) return false;
+                if (!canUseDiary()) return false;
                 try { vault.migrate(json); return true; } catch (Exception error) { return false; }
             }
             @JavascriptInterface public String getAppInfo() {
-                if (!lockController.isUnlocked()) return "{}";
+                if (!canUseDiary()) return "{}";
                 org.json.JSONObject info = new org.json.JSONObject();
                 try {
                     info.put("version", getPackageManager().getPackageInfo(getPackageName(), 0).versionName)
@@ -224,38 +233,37 @@ public class MainActivity extends FragmentActivity {
             }
             @JavascriptInterface public void accountSettings() {
                 runOnUiThread(() -> {
-                    if (!lockController.isUnlocked()) return;
-                    if (accountController == null) accountController = new RumoAccountController(MainActivity.this, vault);
+                    if (!canUseDiary()) return;
                     accountController.show();
                 });
             }
             @JavascriptInterface public void securitySettings() {
-                runOnUiThread(() -> { if (lockController.isUnlocked()) lockController.showSettings(); });
+                runOnUiThread(() -> { if (canUseDiary()) lockController.showSettings(); });
             }
             @JavascriptInterface public void lockNow() {
                 runOnUiThread(() -> { if (vault.pinEnabled()) lockController.lock(); });
             }
             @JavascriptInterface public boolean syncWidget(String json) {
-                if (!lockController.isUnlocked() || json == null || json.length() > 2000) return false;
+                if (!canUseDiary() || json == null || json.length() > 2000) return false;
                 try { RumoWidgetProvider.sync(MainActivity.this, json); return true; } catch (Exception error) { return false; }
             }
             @JavascriptInterface public void addWidget() {
                 runOnUiThread(() -> {
-                    if (!lockController.isUnlocked()) return;
+                    if (!canUseDiary()) return;
                     if (!RumoWidgetProvider.requestAdd(MainActivity.this)) Toast.makeText(MainActivity.this,
                             "Na tela inicial, mantenha um espaço vazio pressionado > Widgets > Rumo.", Toast.LENGTH_LONG).show();
                 });
             }
             @JavascriptInterface public void composeFeedback(String category, String description) {
-                if (!lockController.isUnlocked() || description == null || description.length() > 8000) return;
+                if (!canUseDiary() || description == null || description.length() > 8000) return;
                 runOnUiThread(() -> {
-                    if (!lockController.isUnlocked()) return;
+                    if (!canUseDiary()) return;
                     String address = getString(R.string.support_email).trim();
                     if (!android.util.Patterns.EMAIL_ADDRESS.matcher(address).matches()) {
                         Toast.makeText(MainActivity.this, "O contato ainda será configurado. Use Copiar mensagem.", Toast.LENGTH_LONG).show(); return;
                     }
                     String kind = "bug".equals(category) ? "Problema" : "Sugestão";
-                    String version = "1.4.0-beta";
+                    String version = "1.5.0-beta";
                     try { version = getPackageManager().getPackageInfo(getPackageName(), 0).versionName; } catch (Exception ignored) { }
                     String subject = "Rumo — " + kind + " — v" + version;
                     String body = description + "\n\nRumo " + version + " | Android " + Build.VERSION.RELEASE
@@ -273,8 +281,12 @@ public class MainActivity extends FragmentActivity {
         if (lockController.isUnlocked()) showUnlockedApp(); else lockController.lock();
     }
 
+    private boolean canUseDiary(){return lockController!=null&&lockController.isUnlocked()&&accessController!=null&&accessController.isAllowed();}
+
     private void showUnlockedApp() {
-        if (webView == null) return;
+        if (isFinishing() || isDestroyed() || webView == null || lockController == null || !lockController.isUnlocked()) return;
+        if (accessController != null && !accessController.enter()) { webView.setVisibility(android.view.View.INVISIBLE); return; }
+        webView.setVisibility(android.view.View.VISIBLE);
         webView.onResume(); webView.resumeTimers();
         if (!pageStarted) { pageStarted = true; webView.loadUrl(APP_URL); }
         else showToolsIfRequested();
@@ -338,13 +350,13 @@ public class MainActivity extends FragmentActivity {
 
     @Override
     public void onBackPressed() {
-        if (webView == null || lockController == null || !lockController.isUnlocked()) { super.onBackPressed(); return; }
+        if (webView == null || !canUseDiary()) { super.onBackPressed(); return; }
         // In-app navigation is tab based; Android Back returns to the calendar.
         webView.evaluateJavascript("(function(){var b=document.querySelector('[data-tab=calendar]');if(b)b.click();})()", null);
     }
 
     private void showToolsIfRequested() {
-        if (lockController == null || !lockController.isUnlocked()) return;
+        if (!canUseDiary()) return;
         Intent intent = getIntent();
         if (intent != null && intent.getBooleanExtra("rumo_open_checkin", false) && webView != null) {
             intent.removeExtra("rumo_open_checkin");
@@ -369,11 +381,13 @@ public class MainActivity extends FragmentActivity {
     }
     @Override protected void onResume() {
         super.onResume();
-        if (webView != null && lockController != null && lockController.isUnlocked()) { webView.onResume(); webView.resumeTimers(); }
+        if (accessController != null) accessController.onResume();
+        if (webView != null && lockController != null && lockController.isUnlocked()) showUnlockedApp();
     }
     @Override protected void onStop() {
         if (webView != null) webView.evaluateJavascript("window.RumoDismissSensitiveDialogs && window.RumoDismissSensitiveDialogs()", null);
         if (accountController != null) accountController.dismiss();
+        if (accessController != null) accessController.onStop();
         if (lockController != null) lockController.lock();
         if (webView != null) { webView.onPause(); webView.pauseTimers(); }
         super.onStop();
@@ -381,6 +395,7 @@ public class MainActivity extends FragmentActivity {
 
     @Override
     protected void onDestroy() {
+        if (accessController != null) accessController.destroy();
         if (accountController != null) accountController.destroy();
         if (lockController != null) lockController.destroy();
         if (importFileCallback != null) {

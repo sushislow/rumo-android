@@ -1,19 +1,25 @@
-# Rumo — Diário de progresso · 1.4.0-beta
+# Rumo — Diário de progresso · 1.5.0-beta
 
-Beta Android com calendário, check-ins, gatilhos personalizados, conquistas acumuladas, plano pessoal, widget discreto, cofre local, PIN, biometria opcional e backup protegido.
+Base para instalação gratuita pela Play Store com compra única de acesso ligada à conta. Diário local criptografado, PIN, biometria opcional, backup protegido, oito temas, conquistas e widget são preservados.
 
-Esta atualização traz oito temas, painel inicial atualizado e campos de senha próprios do Rumo. A conta opcional com Google/e-mail foi implementada e começa **desativada**, aguardando a configuração do projeto Firebase e da página pública. Ela não sincroniza o diário e não substitui o PIN ou a senha do backup.
+A versão comercial verifica a licença antes de carregar o diário. Conta Firebase e compra pelo site ou Google Play convergem para a mesma autorização. A autorização assinada permite até sete dias offline. Tokens, senhas e comprovantes nunca entram no JavaScript do diário.
 
-- Atualização pelo Codespaces: `GUIA_ATUALIZACAO_1_4.md`.
-- Conta e recuperação de senha: `CONFIGURAR_CONTA_1_4.md`.
-- Resultado dos testes e limites: `VALIDACAO_v1_4.md`.
-- Assinatura para distribuição: `GUIA_ASSINATURA_E_PUBLICACAO.md`.
+**Serviços ainda não configurados. Não está pronto para vendas.** Não há publicação Play, produto cadastrado, credenciais, chave comercial ou transações reais nesta entrega.
+
+- `GUIA_ATUALIZACAO_1_5.md`: enviar esta atualização ao GitHub/Codespaces.
+- `CONFIGURAR_VENDAS_1_5.md`: configurar contas, servidor, produto e assinaturas.
+- `VALIDACAO_v1_5.md`: testes feitos e limites.
+
+O GitHub Actions gera dois APKs de teste: `Rumo-APK` (debug pessoal, sem exigência de compra) e `Rumo-Ativacao-Teste` (commercialDebug, com conta/licença obrigatórias). **Nunca distribua o debug pessoal como produto comercial.** O release exige licença e o workflow manual exige configuração pública e assinatura antes de produzir AAB/APK.
 
 ```bash
 node tests/rumo-smoke.js
 node tests/rumo-features.js
+bash tests/run-java-tests.sh
 ```
 
-O teste DOM de senhas e temas está em `tests/security-ui.cjs`; o GitHub Actions instala sua dependência temporária e o executa. A interface de conta, o PIN, a biometria e o widget ainda exigem testes com os serviços configurados e em aparelho real. A página e o servidor de compra são um projeto separado.
+A interface DOM é testada por `tests/security-ui.cjs` (jsdom 26.1.0). Android: Java 17, AGP 8.10.1, Gradle 8.11.1, compile/target API 36, mínimo API 24 e Play Billing 9.1.0. Não substituímos o diário existente por outro projeto.
 
-O projeto preserva Java no Android e HTML/CSS/JavaScript interno para o diário. A privacidade depende da arquitetura, controle de acesso e criptografia, não de uma linguagem que seria automaticamente privada. Não há promessa de cura, certificação de segurança ou prevenção garantida de redistribuição do APK.
+O site e o Worker TypeScript são um projeto separado. Dentro do aplicativo, a compra usa o Google Play Billing; não há botão para checkout externo. O preço é obtido do Google. Kirvano não está integrada.
+
+Sem promessa de cura, certificação de segurança ou proteção inviolável contra redistribuição/modificação de APK. Documentos 1.3/1.4 preservados são históricos; o guia 1.5 prevalece para o modelo comercial.

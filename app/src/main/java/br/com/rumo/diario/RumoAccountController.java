@@ -34,10 +34,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.json.JSONObject;
 
-/** Optional account UI. Passwords/tokens never enter the journal JavaScript bridge. */
+/** Native account UI. Passwords/tokens never enter the journal JavaScript bridge. */
 public final class RumoAccountController {
     private final FragmentActivity activity;
     private final RumoVault vault;
+    private final Runnable onAccountChanged;
     private final ExecutorService worker=Executors.newSingleThreadExecutor();
     private FirebaseAuth auth;
     private AlertDialog dialog, confirmation;
@@ -46,9 +47,11 @@ public final class RumoAccountController {
     private CheckBox adult;
     private LinearLayout fields;
     private CancellationSignal credentialRequest;
-    private boolean busy;
+    private boolean busy,destroyed;
 
-    public RumoAccountController(FragmentActivity activity,RumoVault vault) {this.activity=activity;this.vault=vault;}
+    public RumoAccountController(FragmentActivity activity,RumoVault vault,Runnable onAccountChanged) {this.activity=activity;this.vault=vault;this.onAccountChanged=onAccountChanged;}
+    FirebaseAuth getAuth(){try{return initialize()?auth:null;}catch(Exception unavailable){return null;}}
+    private void changed(){onAccountChanged.run();}
     public static boolean configured(android.content.Context context) {
         return context.getResources().getBoolean(R.bool.rumo_account_enabled)
             && !context.getString(R.string.rumo_firebase_api_key).trim().isEmpty()
@@ -56,7 +59,7 @@ public final class RumoAccountController {
             && !context.getString(R.string.rumo_firebase_app_id).trim().isEmpty();
     }
     private RumoStyle style(){return new RumoStyle(activity,vault);}
-    private boolean visible(){return dialog!=null&&dialog.isShowing()&&!activity.isFinishing();}
+    private boolean visible(){return !destroyed&&dialog!=null&&dialog.isShowing()&&!activity.isFinishing();}
     private void message(String value){if(visible()&&status!=null)status.setText(value);}
     private void busy(boolean value){busy=value;if(fields!=null)setEnabled(fields,!value);}
     private void setEnabled(android.view.View view,boolean enabled){
@@ -64,6 +67,7 @@ public final class RumoAccountController {
         if(view instanceof android.view.ViewGroup)for(int i=0;i<((android.view.ViewGroup)view).getChildCount();i++)setEnabled(((android.view.ViewGroup)view).getChildAt(i),enabled);
     }
     private boolean initialize(){
+        if(destroyed)return false;
         if(!configured(activity))return false;
         if(auth!=null)return true;
         FirebaseApp app;
@@ -107,12 +111,11 @@ public final class RumoAccountController {
                 if(busy)return;busy(true);user.sendEmailVerification().addOnCompleteListener(task->{busy(false);message(task.isSuccessful()?"Confira seu e-mail para verificar a conta.":"Não foi possível enviar agora. Aguarde e tente novamente.");});
             }));
             fields.addView(palette.button("Conferir meu acesso",this::access));
-            fields.addView(palette.button("Abrir minha conta no navegador",this::openAccount));
             fields.addView(palette.button("Sair da conta",this::signOut));
             fields.addView(palette.button("Excluir conta de acesso",()->{ confirmation=style().dialog().setTitle("Excluir conta de acesso?")
-                .setMessage("Seu diário local será mantido. A exclusão encerra o login desta conta e não é um pedido de reembolso. Registros de compra podem ser mantidos para obrigações legais. Se necessário, exporte um backup antes.")
+                .setMessage("Seu diário local será mantido. A exclusão encerra o login e pode impedir a recuperação da licença vinculada a esta conta. Não é um pedido de reembolso. Registros de compra podem ser mantidos para obrigações legais. Se necessário, exporte um backup antes.")
                 .setNegativeButton("Cancelar",null).setPositiveButton("Excluir conta",(d,w)->{
-                    if(busy)return;busy(true);user.delete().addOnCompleteListener(task->{busy(false);if(task.isSuccessful())show();else message("Entre novamente na conta antes de solicitar a exclusão.");});
+                    if(busy)return;busy(true);user.delete().addOnCompleteListener(task->{busy(false);if(task.isSuccessful()){show();changed();}else message("Entre novamente na conta antes de solicitar a exclusão.");});
                 }).show(); }));
         }
         fields.addView(status);ScrollView scroll=new ScrollView(activity);scroll.addView(fields);
@@ -128,7 +131,7 @@ public final class RumoAccountController {
         com.google.android.gms.tasks.Task<com.google.firebase.auth.AuthResult> task=create?auth.createUserWithEmailAndPassword(address,secret):auth.signInWithEmailAndPassword(address,secret);
         task.addOnCompleteListener(result->{busy(false);if(result.isSuccessful()){
             if(create&&auth.getCurrentUser()!=null)auth.getCurrentUser().sendEmailVerification();
-            if(visible())show();
+            if(visible())show();changed();
         }else message(create?"Não foi possível criar a conta. Confira os dados ou use a recuperação de senha.":"Não foi possível entrar. Confira os dados e sua conexão.");});
     }
     private void reset(){
@@ -147,20 +150,20 @@ public final class RumoAccountController {
                         Credential credential=result.getCredential();
                         if(!(credential instanceof CustomCredential)||!GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL.equals(credential.getType()))throw new IllegalArgumentException();
                         String token=GoogleIdTokenCredential.createFrom(credential.getData()).getIdToken();
-                        auth.signInWithCredential(GoogleAuthProvider.getCredential(token,null)).addOnCompleteListener(task->{busy(false);if(task.isSuccessful()){if(visible())show();}else message("Não foi possível entrar com Google. Tente novamente.");});
+                        auth.signInWithCredential(GoogleAuthProvider.getCredential(token,null)).addOnCompleteListener(task->{busy(false);if(task.isSuccessful()){if(visible())show();changed();}else message("Não foi possível entrar com Google. Tente novamente.");});
                     }catch(Exception error){busy(false);message("Não foi possível confirmar a conta Google.");}
                 }
                 @Override public void onError(GetCredentialException error){busy(false);message("Entrada com Google cancelada ou indisponível.");}
             });
     }
-    private String origin(){String value=activity.getString(R.string.rumo_account_origin).trim();try{URL url=new URL(value);if(!"https".equals(url.getProtocol())||url.getUserInfo()!=null||url.getQuery()!=null||url.getRef()!=null||!url.getPath().isEmpty())return "";return value;}catch(Exception invalid){return "";}}
-    private void openAccount(){String base=origin();if(base.isEmpty()){message("A página da conta ainda não está disponível neste teste.");return;}try{activity.startActivity(new Intent(Intent.ACTION_VIEW,android.net.Uri.parse(base+"/#conta")));}catch(Exception error){message("Não foi possível abrir o navegador.");}}
+    private String origin(){return RumoAccountApi.origin(activity);}
     private void access(){
         FirebaseUser user=auth.getCurrentUser();if(user==null||busy)return;if(origin().isEmpty()){message("A consulta de compra ainda não foi liberada neste teste.");return;}
         busy(true);message("Conferindo seu acesso…");
         user.reload().addOnCompleteListener(reload->{
             if(!reload.isSuccessful()){busy(false);message("Conecte-se à internet para conferir o acesso.");return;}
             user.getIdToken(true).addOnCompleteListener(task->{
+                if(destroyed)return;
                 if(!task.isSuccessful()||task.getResult()==null){busy(false);message("Entre novamente na conta.");return;}
                 String token=task.getResult().getToken(),base=origin();
                 worker.execute(()->{
@@ -169,7 +172,7 @@ public final class RumoAccountController {
                         connection=(HttpURLConnection)new URL(base+"/api/access").openConnection();connection.setInstanceFollowRedirects(false);connection.setConnectTimeout(15000);connection.setReadTimeout(15000);
                         connection.setRequestProperty("Authorization","Bearer "+token);connection.setRequestProperty("Accept","application/json");
                         int code=connection.getResponseCode();
-                        if(code==200){byte[] bytes;try(java.io.InputStream input=connection.getInputStream()){java.io.ByteArrayOutputStream output=new java.io.ByteArrayOutputStream();byte[] buffer=new byte[1024];int n;while((n=input.read(buffer))!=-1){if(output.size()+n>8192)throw new java.io.IOException("Response too large");output.write(buffer,0,n);}bytes=output.toByteArray();}JSONObject data=new JSONObject(new String(bytes,StandardCharsets.UTF_8));result=data.optBoolean("active",false)?"Seu acesso Android está confirmado. O diário continua salvo neste aparelho.":"Nenhuma compra aprovada foi localizada para esta conta. Confira na página da sua conta.";}
+                        if(code==200){byte[] bytes;try(java.io.InputStream input=connection.getInputStream()){java.io.ByteArrayOutputStream output=new java.io.ByteArrayOutputStream();byte[] buffer=new byte[1024];int n;while((n=input.read(buffer))!=-1){if(output.size()+n>8192)throw new java.io.IOException("Response too large");output.write(buffer,0,n);}bytes=output.toByteArray();}JSONObject data=new JSONObject(new String(bytes,StandardCharsets.UTF_8));result=data.optBoolean("active",false)?"Seu acesso Android está confirmado. O diário continua salvo neste aparelho.":"Nenhuma compra aprovada foi localizada para esta conta. Use Restaurar compra na tela de acesso.";}
                         else if(code==403)result="Verifique seu e-mail antes de consultar a compra.";
                     }catch(Exception ignored){}finally{if(connection!=null)connection.disconnect();}
                     final String outcome=result;activity.runOnUiThread(()->{busy(false);message(outcome);});
@@ -178,12 +181,12 @@ public final class RumoAccountController {
         });
     }
     private void signOut(){
-        if(busy)return;auth.signOut();
+        if(busy)return;auth.signOut();changed();
         CredentialManager.create(activity).clearCredentialStateAsync(new ClearCredentialStateRequest(),null,ContextCompat.getMainExecutor(activity),new CredentialManagerCallback<Void,ClearCredentialException>(){
             @Override public void onResult(Void result){}
             @Override public void onError(ClearCredentialException error){}
         });show();
     }
     public void dismiss(){if(confirmation!=null){confirmation.dismiss();confirmation=null;}if(dialog!=null){dialog.dismiss();dialog=null;}password=null;email=null;adult=null;status=null;fields=null;}
-    public void destroy(){dismiss();if(credentialRequest!=null)credentialRequest.cancel();worker.shutdownNow();}
+    public void destroy(){destroyed=true;dismiss();if(credentialRequest!=null)credentialRequest.cancel();worker.shutdownNow();}
 }
